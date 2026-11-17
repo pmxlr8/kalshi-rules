@@ -1,0 +1,7 @@
+.env
+data/raw/markets/
+data/processed/items_all.pkl
+runs/cache.jsonl
+__pycache__/
+*.pyc
+.DS_Store
