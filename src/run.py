@@ -54,7 +54,7 @@ def main():
     ap.add_argument("--fake", action="store_true")
     a = ap.parse_args()
 
-    items = pd.read_pickle(PROC / "items_study.pkl")
+    items = pd.read_parquet(PROC / "items_study.parquet")
     items = items[(items.split == a.split) & items.domain.isin(a.domains.split(","))]
     if a.limit:
         items = items.sample(min(a.limit, len(items)), random_state=0)

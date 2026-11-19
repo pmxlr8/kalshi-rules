@@ -11,7 +11,7 @@ def main():
     ap.add_argument("--per_method", type=int, default=30)
     a = ap.parse_args()
     df = load(a.model, a.evidence)
-    feat = pd.read_pickle(PROC / "items_study_feat.pkl")[["item_id", "title", "rules_primary", "near", "distractor_flip", "flipping_distractors"]]
+    feat = pd.read_parquet(PROC / "items_study_feat.parquet")[["item_id", "title", "rules_primary", "near", "distractor_flip", "flipping_distractors"]]
     wrong = df[(df.split == a.split) & ~df.correct.astype(bool)].merge(feat, on="item_id", how="left")
     wrong = wrong.groupby("method", group_keys=False).apply(lambda g: g.sample(min(a.per_method, len(g)), random_state=0), include_groups=True)
     cols = ["method", "item_id", "domain", "strike_type", "near", "distractor_flip", "flipping_distractors", "value", "gold",

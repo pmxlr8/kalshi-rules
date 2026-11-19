@@ -4,7 +4,7 @@ from evidence import cli_numbers
 from methods import evaluate_spec, gold_spec, last_json, normalize_spec, verdict_of
 
 def main():
-    items = pd.read_pickle(PROC / "items_study.pkl")
+    items = pd.read_parquet(PROC / "items_study.parquet")
     agree = [evaluate_spec(gold_spec(r), r["value"]) == r["result"].upper() for _, r in items.iterrows()]
     assert all(agree), f"gold spec disagrees on {len(agree) - sum(agree)} items"
     agree_n = [evaluate_spec(normalize_spec(gold_spec(r)), r["value"]) == r["result"].upper() for _, r in items.iterrows()]

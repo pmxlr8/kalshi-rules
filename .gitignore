@@ -1,7 +1,6 @@
 .env
 data/raw/markets/
-data/processed/items_all.pkl
-runs/cache.jsonl
+*.pkl
 __pycache__/
 *.pyc
 .DS_Store

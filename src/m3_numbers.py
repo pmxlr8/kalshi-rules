@@ -9,8 +9,8 @@ from methods import evaluate_spec, normalize_spec, gold_spec
 from m3_report import prelim_value
 
 def data_numbers():
-    a = pd.read_pickle(PROC / "items_all.pkl")
-    s = pd.read_pickle(PROC / "items_study_feat.pkl")
+    a = pd.read_parquet(PROC / "items_all.parquet")
+    s = pd.read_parquet(PROC / "items_study_feat.parquet")
     num = a[a.value.notna()]
     agree = sum(evaluate_spec(gold_spec(r), r["value"]) == r["result"].upper() for _, r in num.iterrows())
     w = a[a.domain == "weather"].drop_duplicates(["station", "obs_date", "measure"])
@@ -39,7 +39,8 @@ def data_numbers():
         "markets": len(a), "series": int(a.series.nunique()), "numeric_value": len(num),
         "text_label_only": int(a.value.isna().sum()), "gold_agree_numeric": int(agree),
         "first_close": a.close_time.min()[:10], "last_close": a.close_time.max()[:10],
-        "station_days": len(w), "missing_reports": miss, "value_mismatch": int(bad),
+        "station_date_measure_values": len(w), "unique_station_days": int(w.drop_duplicates(["station", "obs_date"]).shape[0]),
+        "missing_reports": miss, "value_mismatch": int(bad),
         "study": len(s), "events": int(s.event.nunique()),
         "by_domain": s.domain.value_counts().to_dict(),
         "by_split": s.split.value_counts().to_dict(), "events_by_split": s.groupby("split").event.nunique().to_dict(),
@@ -83,17 +84,36 @@ def error_numbers():
                  "gold_yes_rate": round(float((c1.gold == "YES").mean()), 3)}
             for dom in ["weather", "all"]:
                 w = c1[~c1.correct_tol & ((c1.domain == dom) | (dom == "all"))]
-                kinds = {"no value stated": 0, "wrong value": 0, "right value, wrong comparison": 0}
-                for _, r in w.iterrows():
-                    nums = [float(x) for x in re.findall(r"(-?\d+(?:\.\d+)?)\s*°", r.raw or "")]
-                    k = "no value stated" if not nums else "right value, wrong comparison" if abs(nums[0] - r.value) < 1e-6 else "wrong value"
-                    kinds[k] += 1
                 both = [i for i in w.item_id if i in c4.index]
                 o[dom] = {"c1_errors": len(w), "yes_on_no": int(((w.verdict_tol == "YES") & (w.gold == "NO")).sum()),
-                          "kinds": kinds if dom == "weather" else None,
                           "c4_has": len(both), "c4_fixes": int(c4.loc[both].sum()) if both else 0}
             out[f"{name} | {ev}"] = o
     return out
+
+def hand_numbers():
+    """Counts from the hand-checked files (results/m3/*.csv). The ALLaM C1 labels were set by reading each output."""
+    h = pd.read_csv(ROOT / "results" / "m3" / "c1_weather_errors_handlabels.csv")
+    c = pd.read_csv(ROOT / "results" / "m3" / "c4_repairs.csv")
+    slip = c.spec_repair.fillna("") != ""
+    a = load("allam-2-7b", "report")
+    a = a[(a.split == "dev") & (a.method == "C1_direct") & (a.domain == "weather")]
+    days = a.groupby("event").agg(n=("item_id", "size"), yes=("verdict_tol", lambda v: int((v == "YES").sum())))
+    all_yes = days[(days.n > 1) & (days.yes == days.n)]
+    return {"c1_allam_weather": {"n": len(h), "labels": h.label.value_counts().to_dict(),
+                                 "all_yes_days": all_yes.index.tolist(), "all_yes_items": int(all_yes.n.sum())},
+            "c4_allam_repairs": {"strict_errors": len(c), "json_cut": int(c.json_cut.sum()),
+                                 "json_cut_value_right": int(c.recovered_value_right.sum()),
+                                 "spec_slip": int(slip.sum()), "spec_slip_kinds": c.spec_repair[slip].value_counts().to_dict(),
+                                 "both": int((c.json_cut & slip).sum()), "cut_only": int((c.json_cut & ~slip).sum()),
+                                 "slip_only": int((~c.json_cut & slip).sum()), "neither": int((~c.json_cut & ~slip).sum()),
+                                 "fixed_by_repairs": int(c.correct_tol.sum()), "still_wrong": int((~c.correct_tol.astype(bool)).sum())}}
+
+def b1_numbers():
+    """Class balance of the Qwen B1 run (no evidence), to read its raw accuracy correctly."""
+    b = load("qwen/qwen3.8-27b", "report")
+    b = b[(b.split == "dev") & (b.method == "B1_no_evidence")]
+    return {"n": len(b), "gold_no_share": round(float((b.gold == "NO").mean()), 3),
+            "pred_no_share": round(float((b.verdict == "NO").mean()), 3)}
 
 def clean(x):
     if isinstance(x, dict):
@@ -107,9 +127,9 @@ def clean(x):
 def main():
     out = ROOT / "results" / "m3"
     summary = json.loads((out / "summary.json").read_text().replace("NaN", "null"))
-    nums = clean({"data": data_numbers(), "pilot": pilot_numbers(), "errors": error_numbers(), "results": summary})
+    nums = clean({"data": data_numbers(), "pilot": pilot_numbers(), "errors": error_numbers(), "hand": hand_numbers(), "b1": b1_numbers(), "results": summary})
     (out / "numbers.json").write_text(json.dumps(nums, indent=1, default=str, allow_nan=False))
-    print(json.dumps({k: nums[k] for k in ("data", "pilot", "errors")}, indent=1, default=str))
+    print(json.dumps({k: nums[k] for k in ("data", "pilot", "errors", "hand")}, indent=1, default=str))
 
 if __name__ == "__main__":
     main()

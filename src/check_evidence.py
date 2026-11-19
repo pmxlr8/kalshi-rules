@@ -2,7 +2,7 @@ import pandas as pd
 from config import PROC
 from evidence import weather_report
 
-df = pd.read_pickle(PROC / "items_all.pkl")
+df = pd.read_parquet(PROC / "items_all.parquet")
 w = df[df.domain == "weather"].drop_duplicates(["station", "obs_date", "measure"])
 bad, miss = 0, 0
 for _, r in w.iterrows():

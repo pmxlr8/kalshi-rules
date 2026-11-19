@@ -16,8 +16,8 @@ than direct prompting or chain of thought, on **real** Kalshi markets with **rea
   The 1 exception is a Nasdaq-100 market whose structured threshold (26,990) differs from its rules text
   ("above 26,989.99"); the text decided it.
 - **Evidence:** for weather, the real NWS climate report (`fetch_cli.py`), which also lists the normal, record and
-  last-year values and the other daily extreme (natural distractors). Its value matches Kalshi's settlement on
-  366 of 367 station-days. `clean` evidence is a one-line official value; `report_both` gives the preliminary and
+  last-year values and the other daily extreme (natural distractors). The weather markets use 375 values (one per
+  station, date and daily high or low); the report exists for 367 and matches Kalshi's value on 366. `clean` evidence is a one-line official value; `report_both` gives the preliminary and
   final reports together (a natural revision case). Finance and economics items use `clean` evidence.
 - **Study sample:** 666 items (384 weather, 144 finance, 138 economics), dev 162 / test 504, split by event (`sample.py`).
 
@@ -42,7 +42,11 @@ Threshold type, distance to the threshold in ladder steps (`near` = within 1 ste
 number in the report would flip the answer (`distractor_flip`), departure from normal, and prior conflict
 (the no-evidence answer B1 is wrong).
 
+The router in `analysis.py` picks a method per cell on dev and is scored on test. Both splits are cut to items that
+have every candidate method, and ties go to the lower mean tokens per item.
+
 ## Run
+Tested with Python 3.13.12; `requirements.txt` pins the exact package versions. Data files are Parquet.
 ```bash
 pip install -r requirements.txt
 cp .env.example .env                   # then paste your key after GROQ_API_KEY= (never commit .env)
@@ -50,13 +54,16 @@ cd src && python3 preflight.py         # checks the key and the model, makes 1 t
 cd .. && SPLITS=dev ./run_all.sh       # tune prompts on dev only
 SPLITS=test ./run_all.sh               # then run test once
 ```
-`MODEL=<groq model id>` picks another model. Every call is cached in `runs/cache.jsonl`, and runs resume.
+`MODEL=<groq model id>` picks another model. Every call is cached in `runs/cache.jsonl` (committed), and runs resume.
+With the cache, every table and the Milestone 3 report rebuild with no API key and no API calls.
 Per-item outputs go to `runs/<model>/<evidence>/<method>.jsonl`. Tables and figures go to
 `results/<model>/<evidence>/` (`summary.md`, accuracy vs. distance to threshold, C4 vs. C2 gain by cell,
 a cluster-robust "when" regression, stage error budget, and a router learned on dev and scored on test).
 `python3 run.py --fake ...` tests the plumbing without an API key.
 
 ## Rebuild the data from scratch
+`data/processed/items_all.parquet` and the study files are committed. The raw market pull (`data/raw/markets/`, about
+220 MB) is not; `fetch_markets.py` downloads it again from Kalshi's public API (settled markets do not change).
 ```bash
 cd src
 python3 fetch_markets.py && python3 fetch_cli.py && python3 build_items.py
@@ -65,12 +72,20 @@ python3 check_evidence.py && python3 sample.py && python3 features.py && python3
 
 ## Milestone 3 report
 ```bash
-cd src && python3 m3_report.py && python3 m3_numbers.py && python3 m3_figure.py   # tables, numbers, figure
-cd ../docs && node make_m3_pdf.js                                                  # docs/Milestone3_Progress_Report.pdf
+cd src && python3 m3_report.py && python3 audit_c4.py && python3 m3_numbers.py && python3 m3_figure.py
+cd ../docs && node make_m3_pdf.js          # docs/Milestone3_Progress_Report.pdf
 ```
 Every number in the PDF is read from `results/m3/numbers.json`; a missing number stops the build.
-Strict scoring needs the exact output format. Tolerant scoring re-reads the saved outputs with format repairs
-only (no new LLM calls), so the gap between the two is pure format failure.
+
+**Strict scoring** needs the exact output format and is the main result (what a deployed system would get).
+**Tolerant scoring** estimates performance after deterministic post-processing of common schema and serialization
+errors: a verdict written as a sentence, a value read from an extractor reply whose JSON was cut off, and the two
+bounds of a "between" rule written as a list. It re-reads the saved outputs (no new LLM calls). A repair can also
+change an answer that was wrong for another reason, so the gap is not a pure count of format errors.
+
+Item-level audits: `results/m3/c4_repairs.csv` lists every strict C4 error of ALLaM 7B and the repair it needed
+(`audit_c4.py`). `results/m3/c1_weather_errors_handlabels.csv` holds our hand labels for the 30 wrong ALLaM 7B
+direct answers on weather.
 
 ## Free Groq tier
 Each model has its own daily token limit, so `./run_free_tier.sh` runs one queue per model and waits at the cap

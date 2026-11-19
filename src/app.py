@@ -9,7 +9,7 @@ from llm import LLM
 st.set_page_config(page_title="Kalshi rule resolution", layout="wide")
 st.title("Does executing the rules help? Chain of thought vs. spec + code")
 
-items = pd.read_pickle(PROC / "items_study_feat.pkl")
+items = pd.read_parquet(PROC / "items_study_feat.parquet")
 with st.sidebar:
     model = st.text_input("Model", DEFAULT_MODEL)
     domain = st.selectbox("Domain", sorted(items.domain.unique()))

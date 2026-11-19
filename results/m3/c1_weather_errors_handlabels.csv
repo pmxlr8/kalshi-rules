@@ -1,0 +1,31 @@
+item_id,gold,said,value,stated_value,label,note
+KXHIGHAUS-26OCT30-T73,YES,NO,71,71,right value wrong comparison,says 71 is higher than 72
+KXHIGHCHI-26OCT06-B70.5,NO,YES,74,,verdict only,JSON only; says YES to every Chicago bucket that day
+KXHIGHCHI-26OCT06-B72.5,NO,YES,74,,verdict only,JSON only
+KXHIGHCHI-26OCT06-B76.5,NO,YES,74,,verdict only,JSON only
+KXHIGHCHI-26OCT06-T70,NO,YES,74,,verdict only,JSON only
+KXHIGHCHI-26OCT06-T77,NO,YES,74,,verdict only,JSON only
+KXHIGHCHI-26OCT18-B61.5,NO,YES,64,,verdict only,JSON only
+KXHIGHCHI-26OCT18-B65.5,NO,YES,64,,verdict only,JSON only
+KXHIGHCHI-26OCT18-B67.5,NO,YES,64,,verdict only,JSON only
+KXHIGHCHI-26OCT18-T61,NO,YES,64,,verdict only,JSON only
+KXHIGHCHI-26OCT18-T68,NO,YES,64,,verdict only,JSON only
+KXHIGHCHI-26OCT21-B68.5,NO,YES,71,,verdict only,JSON only
+KXHIGHCHI-26OCT21-B72.5,NO,YES,71,,verdict only,JSON only
+KXHIGHCHI-26OCT21-B74.5,NO,YES,71,,verdict only,JSON only
+KXHIGHCHI-26OCT21-T68,NO,YES,71,,verdict only,JSON only
+KXHIGHCHI-26OCT21-T75,NO,YES,71,,verdict only,JSON only
+KXHIGHCHI-26OCT26-B62.5,NO,YES,64,,verdict only,JSON only
+KXHIGHCHI-26OCT26-T62,NO,YES,64,,verdict only,JSON only
+KXHIGHCHI-26OCT26-T69,NO,YES,64,,verdict only,JSON only
+KXHIGHDEN-26OCT25-B56.5,NO,YES,58,58,right value wrong comparison,says 58 is less than 57
+KXHIGHLAX-26NOV07-T79,NO,YES,85,85,right value wrong comparison,says 85 is 85 or below so YES for 78 or below
+KXHIGHLAX-26OCT04-B91.5,NO,YES,102,91,wrong value: rule bound,91 is the rule's lower bound; not in the report
+KXHIGHLAX-26OCT04-B97.5,NO,YES,102,92,wrong value: in neither,92 is in neither the report nor this rule
+KXHIGHLAX-26OCT09-T86,NO,YES,77,77,right value wrong comparison,says 77 is 86 or higher
+KXHIGHNY-26OCT09-B69.5,YES,NO,70,70,right value wrong comparison,70 is inside 69 to 70 but says NO
+KXLOWTNYC-26NOV10-B41.5,NO,YES,48,41,wrong value: rule bound,41 is the rule's lower bound
+KXLOWTNYC-26NOV10-B43.5,NO,YES,48,43,wrong value: rule bound,43 is the rule's lower bound
+KXLOWTNYC-26NOV10-B47.5,YES,NO,48,44,wrong value: report distractor,44 is the normal low
+KXLOWTNYC-26NOV10-T41,NO,YES,48,40,wrong value: rule bound,40 is the rule bound
+KXLOWTNYC-26OCT11-T53,NO,YES,54,52,wrong value: rule bound,52 is the rule bound

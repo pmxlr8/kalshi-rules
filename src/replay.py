@@ -27,7 +27,7 @@ def fact_text(model, item_id, method, evidence):
     """Raw text of the fact-extraction call for one finished item, or None."""
     global _ITEMS
     if _ITEMS is None:
-        _ITEMS = pd.read_pickle(PROC / "items_study.pkl").set_index("item_id")
+        _ITEMS = pd.read_parquet(PROC / "items_study.parquet").set_index("item_id")
     llm = _LLMS.setdefault(model, CacheOnly(model))
     it = _ITEMS.loc[item_id].to_dict(); it["item_id"] = item_id
     llm.log = []

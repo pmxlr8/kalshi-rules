@@ -28,8 +28,8 @@ def add_features(items):
     return df
 
 if __name__ == "__main__":
-    f = add_features(pd.read_pickle(PROC / "items_study.pkl"))
-    f.to_pickle(PROC / "items_study_feat.pkl")
+    f = add_features(pd.read_parquet(PROC / "items_study.parquet"))
+    f.to_parquet(PROC / "items_study_feat.parquet", index=False, compression="zstd")
     w = f[f.domain == "weather"]
     print(f"weather items: {len(w)}  near threshold: {w.near.mean():.2f}  a distractor value would flip the answer: {w.distractor_flip.mean():.2f}")
     print("which distractors flip:", w.flipping_distractors.str.split(",").explode().replace("", np.nan).dropna().value_counts().to_dict())

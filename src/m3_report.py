@@ -17,7 +17,7 @@ PAIRS = [("C2_cot", "C1_direct"), ("C4_spec_code", "C1_direct"), ("C4_spec_code"
 PIL = {"KXHIGHNY": "CLINYC", "KXLOWTNYC": "CLINYC", "KXHIGHCHI": "CLIMDW", "KXHIGHMIA": "CLIMIA",
        "KXHIGHAUS": "CLIAUS", "KXHIGHLAX": "CLILAX", "KXHIGHDEN": "CLIDEN", "KXHIGHPHIL": "CLIPHL"}
 
-ITEMS = pd.read_pickle(PROC / "items_study_feat.pkl").set_index("item_id")
+ITEMS = pd.read_parquet(PROC / "items_study_feat.parquet").set_index("item_id")
 
 def prelim_value(item):
     pil = PIL.get(item["series"])
@@ -84,9 +84,9 @@ def slices(df):
     return out
 
 def c4_errors(df):
-    """Why strict C4 is wrong. First cause in this order: the extractor JSON was cut off (value recovered
-    from the cached text), a spec format slip (normalize_spec fixes it), then, for items still wrong under
-    tolerant scoring, the spec meaning or the extracted value."""
+    """Why strict C4 is wrong. Items fixed by tolerant scoring are split by the repair they needed: value
+    recovery from a cut-off extractor JSON, a spec format repair (normalize_spec), or both. Items still wrong
+    are split by the spec meaning and the extracted value. results/m3/c4_repairs.csv (audit_c4.py) lists each item."""
     s = df[(df.method == "C4_spec_code") & ~df.correct.astype(bool)].copy()
     if s.empty:
         return pd.DataFrame(), pd.DataFrame()
@@ -95,10 +95,12 @@ def c4_errors(df):
     norm_spec_ok = [evaluate_spec(normalize_spec(sp), v) == g for sp, v, g in zip(s.spec, gv, s.gold)]
     cut = s.pred_value.isna() & s.pred_value_tol.notna()
     val_ok = [pd.notna(pv) and abs(pv - v) < 1e-6 for pv, v in zip(s.pred_value_tol, gv)]
+    slip = [not r and n for r, n in zip(raw_spec_ok, norm_spec_ok)]
     cause = []
-    for c, r, n, vo, tol in zip(cut, raw_spec_ok, norm_spec_ok, val_ok, s.correct_tol):
+    for c, sl, n, vo, tol in zip(cut, slip, norm_spec_ok, val_ok, s.correct_tol):
         if tol:
-            cause.append("format: extractor JSON cut off" if c else "format: spec field slip")
+            cause.append("fixed: value recovery + spec repair" if c and sl else
+                         "fixed: value recovery only" if c else "fixed: spec repair only")
         elif not n and not vo:
             cause.append("still wrong: spec meaning + value")
         elif not n:
@@ -110,6 +112,17 @@ def c4_errors(df):
     still = s[s.cause.str.startswith("still") & s.cause.str.contains("value")]
     return s.groupby(["domain", "cause"]).size().unstack(fill_value=0), \
         still.groupby("value_from").size().rename("n").to_frame()
+
+def shared_c1_c4(df):
+    """C1 and C4 accuracy on the items that have both (used by Figure 1, panel A)."""
+    d = df[df.method.isin(["C1_direct", "C4_spec_code"])]
+    ok = d.groupby("item_id").method.nunique() == 2
+    d = d[d.item_id.isin(ok[ok].index)]
+    if d.empty:
+        return {}
+    g = lambda m, c: float(d[d.method == m][c].astype(bool).mean())
+    return {"n": int(ok.sum()), "C1_strict": g("C1_direct", "correct"), "C1_tol": g("C1_direct", "correct_tol"),
+            "C4_strict": g("C4_spec_code", "correct"), "C4_tol": g("C4_spec_code", "correct_tol")}
 
 def md(df):
     return df.to_markdown() if len(df) else "_(no data)_"
@@ -136,6 +149,7 @@ def main():
             summary[key] = {"overall": overall(df).set_index("method").to_dict("index"),
                             "pairs": pairs(df).to_dict("records"),
                             "slices": {col: p.reset_index().to_dict("records") for col, p in slices(df)}}
+            summary[key]["shared_c1_c4"] = shared_c1_c4(df)
             e, v = c4_errors(df)
             summary[key]["c4_causes"] = e.reset_index().to_dict("records") if len(e) else []
             summary[key]["c4_value_from"] = v.reset_index().to_dict("records") if len(v) else []

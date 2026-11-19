@@ -15,7 +15,7 @@ COLORS = {"C1_direct": "#2a78d6", "C2_cot": "#eb6834", "C2SC_cot_vote5": "#1baf7
           "C4_spec_code": "#e87ba4"}
 
 def with_features(df):
-    feat = pd.read_pickle(PROC / "items_study_feat.pkl")[["item_id", "near", "distractor_flip", "abs_departure", "rounding_clause"]]
+    feat = pd.read_parquet(PROC / "items_study_feat.parquet")[["item_id", "near", "distractor_flip", "abs_departure", "rounding_clause"]]
     df = df.merge(feat, on="item_id", how="left")
     if "B1_no_evidence" in set(df.method):
         b1 = df[df.method == "B1_no_evidence"].set_index("item_id")["correct"]
@@ -55,22 +55,31 @@ def regression(df, a="C4_spec_code", b="C2_cot"):
     except Exception as e:
         return pd.DataFrame({"note": [f"regression not estimable: {type(e).__name__}: {e}"[:200]]})
 
+def shared(df, cands):
+    """Rows of the candidate methods, only on items that have a result for every candidate."""
+    d = df[df.method.isin(cands)]
+    ok = d.groupby("item_id").method.nunique() == len(cands)
+    return d[d.item_id.isin(ok[ok].index)]
+
 def router(dev, test, cands=("C2_cot", "C4_spec_code"), keys=("domain", "strike_type", "near")):
+    """Pick a method per cell on dev; ties go to the lower mean tokens per item.
+    Dev and test are both cut to items that have every candidate, so all methods see the same items."""
     keys = list(keys)
-    dv = dev[dev.method.isin(cands)]
-    cost = dv.groupby("method")[["in_tok", "out_tok"]].sum().sum(1)
+    dv, ts = shared(dev, cands), shared(test, cands).copy()
+    cost = dv.assign(tok=dv.in_tok + dv.out_tok).groupby("method").tok.mean()
     pick = {}
     for k, g in dv.groupby(keys):
         acc = g.groupby("method").correct.mean()
         best = acc[acc == acc.max()].index
-        pick[k] = min(best, key=lambda m: cost.get(m, 0))
-    default = dv.groupby("method").correct.mean().idxmax()
-    ts = test[test.method.isin(cands)].copy()
+        pick[k] = min(best, key=lambda m: cost.get(m, float("inf")))
+    acc_all = dv.groupby("method").correct.mean()
+    default = min(acc_all[acc_all == acc_all.max()].index, key=lambda m: cost.get(m, float("inf")))
     ts["route"] = [pick.get(tuple(r[k] for k in keys), default) for _, r in ts.iterrows()]
     routed = ts[ts.method == ts.route]
-    res = {m: test[test.method == m].correct.mean() for m in cands}
+    res = {m: ts[ts.method == m].correct.mean() for m in cands}
     res["router"] = routed.correct.mean()
     res["oracle_best_per_item"] = ts.groupby("item_id").correct.max().mean()
+    res["n_test_items"] = ts.item_id.nunique()
     return pd.Series(res).round(3), pd.Series(pick).rename("chosen")
 
 def fig_margin(df, out):

@@ -80,7 +80,7 @@ def main():
         lambda x: np.median(np.diff(np.sort(x.unique()))) if x.nunique() > 1 else np.nan)
     df["ladder_step"] = df["event"].map(steps)
     df["margin_steps"] = df["margin"] / df["ladder_step"]
-    df.to_parquet(PROC / "items_all.parquet") if False else df.to_pickle(PROC / "items_all.pkl")
+    df.to_parquet(PROC / "items_all.parquet", index=False, compression="zstd")
     chk = df.dropna(subset=["gold_rule"])
     print(f"items: {len(df)}  with numeric value + standard strike: {len(chk)}")
     print("result vs strike-rule agreement by series:")

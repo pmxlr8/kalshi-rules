@@ -1,8 +1,11 @@
-requests
-pandas
-numpy
-openai
-statsmodels
-matplotlib
-tabulate
-streamlit
+# Tested with Python 3.13.12 on macOS. Exact versions used for the Milestone 3 results.
+requests==2.34.2
+pandas==3.0.6
+numpy==2.5.4
+pyarrow==26.0.1
+openai==3.31.0
+statsmodels==0.15.0
+scipy==1.18.1
+matplotlib==3.11.2
+tabulate==0.10.0
+streamlit==1.67.0

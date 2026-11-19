@@ -13,7 +13,7 @@ def split_events(events, dev_frac, rng):
 
 def main(days_per_series=8, fin_events=12, per_event=6, dev_frac=0.25):
     rng = np.random.default_rng(SEED)
-    df = pd.read_pickle(PROC / "items_all.pkl")
+    df = pd.read_parquet(PROC / "items_all.parquet")
     df = df[df.gold_rule.notna() & (df.gold_rule == df.result)]
 
     w = df[df.domain == "weather"].copy()
@@ -41,7 +41,7 @@ def main(days_per_series=8, fin_events=12, per_event=6, dev_frac=0.25):
     dev = split_events(items.event.unique(), dev_frac, rng)
     items["split"] = np.where(items.event.isin(dev), "dev", "test")
     items = items.drop(columns=["has_report"], errors="ignore").reset_index(drop=True)
-    items.to_pickle(PROC / "items_study.pkl")
+    items.to_parquet(PROC / "items_study.parquet", index=False, compression="zstd")
     print(items.groupby(["domain", "split"]).agg(items=("item_id", "size"), events=("event", "nunique")).to_string())
     print("\nYES rate by domain:", items.assign(y=items.result == "yes").groupby("domain")["y"].mean().round(2).to_dict())
 

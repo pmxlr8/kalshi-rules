@@ -6,63 +6,72 @@
 
 ### overall
 
-|    | method       |   n |   acc |   acc_tol |   bal_acc |   bal_acc_tol |   no_answer |   no_answer_tol |   calls |   tokens |
-|---:|:-------------|----:|------:|----------:|----------:|--------------:|------------:|----------------:|--------:|---------:|
-|  0 | C1_direct    | 162 | 0.728 |     0.772 |     0.789 |         0.82  |       0.049 |               0 |       1 |  1018.89 |
-|  1 | C2_cot       |  10 | 0.9   |     0.9   |     0.938 |         0.938 |       0     |               0 |       1 |  1791.3  |
-|  2 | C4_spec_code | 162 | 0.568 |     0.963 |     0.609 |         0.956 |       0.42  |               0 |       2 |  1381.28 |
+|    | method           |   n |   acc |   acc_tol |   bal_acc |   bal_acc_tol |   no_answer |   no_answer_tol |   calls |   tokens |
+|---:|:-----------------|----:|------:|----------:|----------:|--------------:|------------:|----------------:|--------:|---------:|
+|  0 | C1_direct        | 162 | 0.728 |     0.772 |     0.789 |         0.82  |       0.049 |           0     |       1 | 1018.89  |
+|  1 | C2_cot           | 162 | 0.772 |     0.772 |     0.826 |         0.826 |       0.037 |           0.037 |       1 | 1141.49  |
+|  2 | C3_spec_prose    | 162 | 0.586 |     0.586 |     0.664 |         0.664 |       0.222 |           0.222 |       3 | 1676.29  |
+|  3 | C4_spec_code     | 162 | 0.568 |     0.963 |     0.609 |         0.956 |       0.42  |           0     |       2 | 1381.28  |
+|  4 | O1_C4_gold_spec  | 162 | 0.827 |     0.975 |     0.841 |         0.97  |       0.148 |           0     |       1 |  867.772 |
+|  5 | O2_C4_gold_value | 162 | 0.654 |     1     |     0.688 |         1     |       0.346 |           0     |       1 |  505.154 |
 
 
 ### paired differences (95% CI, bootstrap by event)
 
-|    | compare                  | scoring   |   n |   diff |   ci_low |   ci_high |
-|---:|:-------------------------|:----------|----:|-------:|---------:|----------:|
-|  0 | C2_cot - C1_direct       | strict    |  10 |  0.4   |    0.2   |     0.6   |
-|  1 | C2_cot - C1_direct       | tolerant  |  10 |  0.2   |    0.2   |     0.2   |
-|  2 | C4_spec_code - C1_direct | strict    | 162 | -0.16  |   -0.299 |    -0.033 |
-|  3 | C4_spec_code - C1_direct | tolerant  | 162 |  0.191 |    0.095 |     0.304 |
-|  4 | C4_spec_code - C2_cot    | strict    |  10 | -0.7   |   -0.8   |    -0.6   |
-|  5 | C4_spec_code - C2_cot    | tolerant  |  10 |  0.1   |    0     |     0.2   |
+|    | compare                         | scoring   |   n |   diff |   ci_low |   ci_high |
+|---:|:--------------------------------|:----------|----:|-------:|---------:|----------:|
+|  0 | C2_cot - C1_direct              | strict    | 162 |  0.043 |   -0.038 |     0.122 |
+|  1 | C2_cot - C1_direct              | tolerant  | 162 |  0     |   -0.096 |     0.083 |
+|  2 | C4_spec_code - C1_direct        | strict    | 162 | -0.16  |   -0.299 |    -0.033 |
+|  3 | C4_spec_code - C1_direct        | tolerant  | 162 |  0.191 |    0.095 |     0.304 |
+|  4 | C4_spec_code - C2_cot           | strict    | 162 | -0.204 |   -0.333 |    -0.08  |
+|  5 | C4_spec_code - C2_cot           | tolerant  | 162 |  0.191 |    0.096 |     0.308 |
+|  6 | C3_spec_prose - C4_spec_code    | strict    | 162 |  0.019 |   -0.068 |     0.111 |
+|  7 | C3_spec_prose - C4_spec_code    | tolerant  | 162 | -0.377 |   -0.551 |    -0.228 |
+|  8 | O1_C4_gold_spec - C4_spec_code  | strict    | 162 |  0.259 |    0.108 |     0.423 |
+|  9 | O1_C4_gold_spec - C4_spec_code  | tolerant  | 162 |  0.012 |    0     |     0.038 |
+| 10 | O2_C4_gold_value - C4_spec_code | strict    | 162 |  0.086 |    0.036 |     0.147 |
+| 11 | O2_C4_gold_value - C4_spec_code | tolerant  | 162 |  0.037 |    0     |     0.08  |
 
 
 ### accuracy by domain
 
-| domain   |   n_items |   C1_direct |   C2_cot |   C4_spec_code |
-|:---------|----------:|------------:|---------:|---------------:|
-| econ     |        24 |       0.875 |    nan   |          1     |
-| fin      |        54 |       0.926 |    nan   |          1     |
-| weather  |        84 |       0.643 |      0.9 |          0.929 |
+| domain   |   n_items |   C1_direct |   C2_cot |   C3_spec_prose |   C4_spec_code |
+|:---------|----------:|------------:|---------:|----------------:|---------------:|
+| econ     |        24 |       0.875 |    0.958 |           0.917 |          1     |
+| fin      |        54 |       0.926 |    0.944 |           0.926 |          1     |
+| weather  |        84 |       0.643 |    0.607 |           0.274 |          0.929 |
 
 
 ### accuracy by near
 
-| near   |   n_items |   C1_direct |   C2_cot |   C4_spec_code |
-|:-------|----------:|------------:|---------:|---------------:|
-| False  |       111 |       0.811 |      1   |          0.973 |
-| True   |        51 |       0.686 |      0.8 |          0.941 |
+| near   |   n_items |   C1_direct |   C2_cot |   C3_spec_prose |   C4_spec_code |
+|:-------|----------:|------------:|---------:|----------------:|---------------:|
+| False  |       111 |       0.811 |    0.829 |           0.658 |          0.973 |
+| True   |        51 |       0.686 |    0.647 |           0.431 |          0.941 |
 
 
 ### accuracy by distractor_flip
 
-| distractor_flip   |   n_items |   C1_direct |   C2_cot |   C4_spec_code |
-|:------------------|----------:|------------:|---------:|---------------:|
-| False             |       119 |       0.824 |    1     |          0.992 |
-| True              |        43 |       0.628 |    0.833 |          0.884 |
+| distractor_flip   |   n_items |   C1_direct |   C2_cot |   C3_spec_prose |   C4_spec_code |
+|:------------------|----------:|------------:|---------:|----------------:|---------------:|
+| False             |       119 |       0.824 |    0.773 |           0.672 |          0.992 |
+| True              |        43 |       0.628 |    0.767 |           0.349 |          0.884 |
 
 
 ### accuracy by shape
 
-| shape              |   n_items |   C1_direct |   C2_cot |   C4_spec_code |
-|:-------------------|----------:|------------:|---------:|---------------:|
-| between (2 bounds) |        62 |       0.726 |     1    |          0.935 |
-| one-sided          |       100 |       0.8   |     0.75 |          0.98  |
+| shape              |   n_items |   C1_direct |   C2_cot |   C3_spec_prose |   C4_spec_code |
+|:-------------------|----------:|------------:|---------:|----------------:|---------------:|
+| between (2 bounds) |        62 |       0.726 |    0.565 |            0.29 |          0.935 |
+| one-sided          |       100 |       0.8   |    0.9   |            0.77 |          0.98  |
 
 
 ### C4 error causes
 
-| domain   |   format: extractor JSON cut off |   format: spec field slip |   still wrong: value |
-|:---------|---------------------------------:|--------------------------:|---------------------:|
-| weather  |                               34 |                        30 |                    6 |
+| domain   |   fixed: spec repair only |   fixed: value recovery + spec repair |   fixed: value recovery only |   still wrong: value |
+|:---------|--------------------------:|--------------------------------------:|-----------------------------:|---------------------:|
+| weather  |                        30 |                                    22 |                           12 |                    6 |
 
 
 ### where a wrong C4 value came from
@@ -80,43 +89,47 @@
 
 |    | method    |   n |   acc |   acc_tol |   bal_acc |   bal_acc_tol |   no_answer |   no_answer_tol |   calls |   tokens |
 |---:|:----------|----:|------:|----------:|----------:|--------------:|------------:|----------------:|--------:|---------:|
-|  0 | C1_direct |   7 |     0 |     0.286 |       nan |           nan |           1 |           0.714 |       1 |     3281 |
+|  0 | C1_direct |   7 | 0     |     0.286 |   nan     |       nan     |       1     |           0.714 |       1 |  3281    |
+|  1 | C2_cot    |  84 | 0.119 |     0.274 |     0.214 |         0.336 |       0.798 |           0.571 |       1 |  3064.17 |
 
 
 ### paired differences (95% CI, bootstrap by event)
 
-_(no data)_
+|    | compare            | scoring   |   n |   diff |   ci_low |   ci_high |
+|---:|:-------------------|:----------|----:|-------:|---------:|----------:|
+|  0 | C2_cot - C1_direct | strict    |   7 |  0.143 |        0 |       0.5 |
+|  1 | C2_cot - C1_direct | tolerant  |   7 |  0     |        0 |       0   |
 
 
 ### accuracy by domain
 
-| domain   |   n_items |   C1_direct |
-|:---------|----------:|------------:|
-| weather  |         7 |       0.286 |
+| domain   |   n_items |   C1_direct |   C2_cot |
+|:---------|----------:|------------:|---------:|
+| weather  |        84 |       0.286 |    0.274 |
 
 
 ### accuracy by near
 
-| near   |   n_items |   C1_direct |
-|:-------|----------:|------------:|
-| False  |         4 |       0.25  |
-| True   |         3 |       0.333 |
+| near   |   n_items |   C1_direct |   C2_cot |
+|:-------|----------:|------------:|---------:|
+| False  |        44 |       0.25  |    0.273 |
+| True   |        40 |       0.333 |    0.275 |
 
 
 ### accuracy by distractor_flip
 
-| distractor_flip   |   n_items |   C1_direct |
-|:------------------|----------:|------------:|
-| False             |         3 |         0   |
-| True              |         4 |         0.5 |
+| distractor_flip   |   n_items |   C1_direct |   C2_cot |
+|:------------------|----------:|------------:|---------:|
+| False             |        41 |         0   |    0.146 |
+| True              |        43 |         0.5 |    0.395 |
 
 
 ### accuracy by shape
 
-| shape              |   n_items |   C1_direct |
-|:-------------------|----------:|------------:|
-| between (2 bounds) |         3 |         0   |
-| one-sided          |         4 |         0.5 |
+| shape              |   n_items |   C1_direct |   C2_cot |
+|:-------------------|----------:|------------:|---------:|
+| between (2 bounds) |        56 |         0   |    0.232 |
+| one-sided          |        28 |         0.5 |    0.357 |
 
 
 ### C4 error causes
@@ -135,55 +148,55 @@ _(no data)_
 
 |    | method         |   n |   acc |   acc_tol |   bal_acc |   bal_acc_tol |   no_answer |   no_answer_tol |   calls |   tokens |
 |---:|:---------------|----:|------:|----------:|----------:|--------------:|------------:|----------------:|--------:|---------:|
-|  0 | B1_no_evidence |  96 | 0.698 |     0.698 |     0.498 |         0.498 |        0.01 |            0.01 |       1 |  406.312 |
-|  1 | C1_direct      | 162 | 1     |     1     |     1     |         1     |        0    |            0    |       1 |  587.086 |
-|  2 | C2_cot         |  24 | 1     |     1     |     1     |         1     |        0    |            0    |       1 | 1038     |
-|  3 | C4_spec_code   |  25 | 1     |     1     |     1     |         1     |        0    |            0    |       2 | 1022.52  |
+|  0 | B1_no_evidence |  96 | 0.698 |     0.698 |     0.498 |         0.498 |       0.01  |           0.01  |       1 |  406.312 |
+|  1 | C1_direct      | 162 | 1     |     1     |     1     |         1     |       0     |           0     |       1 |  587.086 |
+|  2 | C2_cot         | 117 | 0.991 |     0.991 |     0.994 |         0.994 |       0.009 |           0.009 |       1 |  898.667 |
+|  3 | C4_spec_code   | 161 | 1     |     1     |     1     |         1     |       0     |           0     |       2 |  927.944 |
 
 
 ### paired differences (95% CI, bootstrap by event)
 
 |    | compare                  | scoring   |   n |   diff |   ci_low |   ci_high |
 |---:|:-------------------------|:----------|----:|-------:|---------:|----------:|
-|  0 | C2_cot - C1_direct       | strict    |  24 |      0 |        0 |         0 |
-|  1 | C2_cot - C1_direct       | tolerant  |  24 |      0 |        0 |         0 |
-|  2 | C4_spec_code - C1_direct | strict    |  25 |      0 |        0 |         0 |
-|  3 | C4_spec_code - C1_direct | tolerant  |  25 |      0 |        0 |         0 |
-|  4 | C4_spec_code - C2_cot    | strict    |  14 |      0 |        0 |         0 |
-|  5 | C4_spec_code - C2_cot    | tolerant  |  14 |      0 |        0 |         0 |
+|  0 | C2_cot - C1_direct       | strict    | 117 | -0.009 |   -0.027 |     0     |
+|  1 | C2_cot - C1_direct       | tolerant  | 117 | -0.009 |   -0.027 |     0     |
+|  2 | C4_spec_code - C1_direct | strict    | 161 |  0     |    0     |     0     |
+|  3 | C4_spec_code - C1_direct | tolerant  | 161 |  0     |    0     |     0     |
+|  4 | C4_spec_code - C2_cot    | strict    | 116 |  0.009 |    0     |     0.027 |
+|  5 | C4_spec_code - C2_cot    | tolerant  | 116 |  0.009 |    0     |     0.027 |
 
 
 ### accuracy by domain
 
 | domain   |   n_items |   C1_direct |   C2_cot |   C4_spec_code |
 |:---------|----------:|------------:|---------:|---------------:|
-| econ     |        24 |           1 |      nan |              1 |
-| fin      |        54 |           1 |      nan |              1 |
-| weather  |        84 |           1 |        1 |              1 |
+| econ     |        24 |           1 |  nan     |              1 |
+| fin      |        54 |           1 |    1     |              1 |
+| weather  |        84 |           1 |    0.988 |              1 |
 
 
 ### accuracy by near
 
 | near   |   n_items |   C1_direct |   C2_cot |   C4_spec_code |
 |:-------|----------:|------------:|---------:|---------------:|
-| False  |       111 |           1 |        1 |              1 |
-| True   |        51 |           1 |        1 |              1 |
+| False  |       111 |           1 |    1     |              1 |
+| True   |        51 |           1 |    0.976 |              1 |
 
 
 ### accuracy by distractor_flip
 
 | distractor_flip   |   n_items |   C1_direct |   C2_cot |   C4_spec_code |
 |:------------------|----------:|------------:|---------:|---------------:|
-| False             |       119 |           1 |        1 |              1 |
-| True              |        43 |           1 |        1 |              1 |
+| False             |       119 |           1 |    0.986 |              1 |
+| True              |        43 |           1 |    1     |              1 |
 
 
 ### accuracy by shape
 
 | shape              |   n_items |   C1_direct |   C2_cot |   C4_spec_code |
 |:-------------------|----------:|------------:|---------:|---------------:|
-| between (2 bounds) |        62 |           1 |        1 |              1 |
-| one-sided          |       100 |           1 |        1 |              1 |
+| between (2 bounds) |        62 |           1 |    0.984 |              1 |
+| one-sided          |       100 |           1 |    1     |              1 |
 
 
 ### C4 error causes
@@ -202,59 +215,64 @@ _(no data)_
 
 |    | method       |   n |   acc |   acc_tol |   bal_acc |   bal_acc_tol |   no_answer |   no_answer_tol |   calls |   tokens |
 |---:|:-------------|----:|------:|----------:|----------:|--------------:|------------:|----------------:|--------:|---------:|
-|  0 | C1_direct    |   6 | 0.833 |     0.833 |      0.75 |          0.75 |       0.167 |           0.167 |       1 |    719.5 |
-|  1 | C4_spec_code |   4 | 1     |     1     |      1    |          1    |       0     |           0     |       2 |   1079   |
+|  0 | C1_direct    |  86 | 0.907 |     0.907 |     0.919 |         0.919 |       0.093 |           0.093 |       1 |  887.686 |
+|  1 | C4_spec_code |  86 | 0.884 |     0.884 |     0.856 |         0.856 |       0.058 |           0.058 |       2 | 1344.67  |
 
 
 ### paired differences (95% CI, bootstrap by event)
 
 |    | compare                  | scoring   |   n |   diff |   ci_low |   ci_high |
 |---:|:-------------------------|:----------|----:|-------:|---------:|----------:|
-|  0 | C4_spec_code - C1_direct | strict    |   4 |   0.25 |        0 |      0.75 |
-|  1 | C4_spec_code - C1_direct | tolerant  |   4 |   0.25 |        0 |      0.75 |
+|  0 | C4_spec_code - C1_direct | strict    |  86 | -0.023 |   -0.173 |     0.121 |
+|  1 | C4_spec_code - C1_direct | tolerant  |  86 | -0.023 |   -0.173 |     0.121 |
 
 
 ### accuracy by domain
 
 | domain   |   n_items |   C1_direct |   C4_spec_code |
 |:---------|----------:|------------:|---------------:|
-| econ     |         1 |        1    |              1 |
-| fin      |         1 |        1    |              1 |
-| weather  |         4 |        0.75 |              1 |
+| econ     |         1 |       1     |          1     |
+| fin      |         1 |       1     |          1     |
+| weather  |        84 |       0.905 |          0.881 |
 
 
 ### accuracy by near
 
 | near   |   n_items |   C1_direct |   C4_spec_code |
 |:-------|----------:|------------:|---------------:|
-| False  |         3 |       1     |              1 |
-| True   |         3 |       0.667 |              1 |
+| False  |        46 |       0.891 |          0.891 |
+| True   |        40 |       0.925 |          0.875 |
 
 
 ### accuracy by distractor_flip
 
 | distractor_flip   |   n_items |   C1_direct |   C4_spec_code |
 |:------------------|----------:|------------:|---------------:|
-| False             |         2 |        1    |              1 |
-| True              |         4 |        0.75 |              1 |
+| False             |        43 |       0.93  |          0.953 |
+| True              |        43 |       0.884 |          0.814 |
 
 
 ### accuracy by shape
 
 | shape              |   n_items |   C1_direct |   C4_spec_code |
 |:-------------------|----------:|------------:|---------------:|
-| between (2 bounds) |         2 |        1    |            nan |
-| one-sided          |         4 |        0.75 |              1 |
+| between (2 bounds) |        56 |       0.929 |          0.911 |
+| one-sided          |        30 |       0.867 |          0.833 |
 
 
 ### C4 error causes
 
-_(no data)_
+| domain   |   still wrong: value |
+|:---------|---------------------:|
+| weather  |                   10 |
 
 
 ### where a wrong C4 value came from
 
-_(no data)_
+| value_from   |   n |
+|:-------------|----:|
+| no value     |   5 |
+| record       |   5 |
 
 ## gpt-oss 20B | evidence: report_both
 
@@ -264,46 +282,46 @@ _(no data)_
 |    | method       |   n |   acc |   acc_tol |   bal_acc |   bal_acc_tol |   no_answer |   no_answer_tol |   calls |   tokens |
 |---:|:-------------|----:|------:|----------:|----------:|--------------:|------------:|----------------:|--------:|---------:|
 |  0 | C1_direct    |  84 | 0.964 |     0.964 |     0.921 |         0.921 |       0.036 |           0.036 |       1 |  1287.64 |
-|  1 | C4_spec_code |  78 | 0.962 |     0.962 |     0.946 |         0.946 |       0     |           0     |       2 |  1753.4  |
+|  1 | C4_spec_code |  84 | 0.964 |     0.964 |     0.95  |         0.95  |       0     |           0     |       2 |  1762.37 |
 
 
 ### paired differences (95% CI, bootstrap by event)
 
 |    | compare                  | scoring   |   n |   diff |   ci_low |   ci_high |
 |---:|:-------------------------|:----------|----:|-------:|---------:|----------:|
-|  0 | C4_spec_code - C1_direct | strict    |  78 | -0.026 |    -0.09 |     0.026 |
-|  1 | C4_spec_code - C1_direct | tolerant  |  78 | -0.026 |    -0.09 |     0.026 |
+|  0 | C4_spec_code - C1_direct | strict    |  84 |      0 |   -0.071 |     0.071 |
+|  1 | C4_spec_code - C1_direct | tolerant  |  84 |      0 |   -0.071 |     0.071 |
 
 
 ### accuracy by domain
 
 | domain   |   n_items |   C1_direct |   C4_spec_code |
 |:---------|----------:|------------:|---------------:|
-| weather  |        84 |       0.964 |          0.962 |
+| weather  |        84 |       0.964 |          0.964 |
 
 
 ### accuracy by near
 
 | near   |   n_items |   C1_direct |   C4_spec_code |
 |:-------|----------:|------------:|---------------:|
-| False  |        44 |       1     |          0.951 |
-| True   |        40 |       0.925 |          0.973 |
+| False  |        44 |       1     |          0.955 |
+| True   |        40 |       0.925 |          0.975 |
 
 
 ### accuracy by distractor_flip
 
 | distractor_flip   |   n_items |   C1_direct |   C4_spec_code |
 |:------------------|----------:|------------:|---------------:|
-| False             |        41 |       0.976 |          1     |
-| True              |        43 |       0.953 |          0.923 |
+| False             |        41 |       0.976 |           1    |
+| True              |        43 |       0.953 |           0.93 |
 
 
 ### accuracy by shape
 
 | shape              |   n_items |   C1_direct |   C4_spec_code |
 |:-------------------|----------:|------------:|---------------:|
-| between (2 bounds) |        56 |       0.964 |          0.981 |
-| one-sided          |        28 |       0.964 |          0.923 |
+| between (2 bounds) |        56 |       0.964 |          0.982 |
+| one-sided          |        28 |       0.964 |          0.929 |
 
 
 ### C4 error causes
