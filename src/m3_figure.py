@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from config import ROOT
 
 C1, C4, INK, INK2, GRID = "#2a78d6", "#eb6834", "#0b0b0b", "#52514e", "#e6e5e0"
-plt.rcParams.update({"font.family": "sans-serif", "font.sans-serif": ["Helvetica Neue", "Helvetica", "Arial", "DejaVu Sans"],
+plt.rcParams.update({"font.family": "sans-serif", "font.sans-serif": ["Arial", "Helvetica", "DejaVu Sans"],
                      "svg.fonttype": "none", "font.size": 8.5, "text.color": INK, "axes.labelcolor": INK2,
                      "xtick.color": INK2, "ytick.color": INK})
 
@@ -34,7 +34,7 @@ for y, (name, key) in enumerate(rows[::-1]):
     a.text(108, y, f"{c1:.0f} / {c4t:.0f}", va="center", ha="left", fontsize=7.8, color=INK2)
 a.text(108, len(rows) - 0.55, "C1 / C4", va="center", ha="left", fontsize=7.8, color=INK2)
 a.set_yticks(range(len(rows))); a.set_yticklabels([r[0] for r in rows[::-1]]); a.set_ylim(-0.6, len(rows) - 0.4)
-style(a); a.set_title("A.  Accuracy on dev, by model", loc="left", fontsize=9, fontweight="bold", pad=8)
+style(a); a.set_title("(A) Accuracy by model", loc="left", fontsize=9, pad=8)
 a.scatter([], [], s=40, color=C1, label="C1 direct"); a.scatter([], [], s=40, color=C4, label="C4 spec + code")
 a.scatter([], [], s=40, facecolor="white", edgecolor=C4, lw=1.6, label="C4 strict scoring")
 fig.legend(*a.get_legend_handles_labels(), loc="lower center", bbox_to_anchor=(0.5, -0.07), ncol=3, frameon=False, fontsize=8, handletextpad=0.2, columnspacing=1.6)
@@ -55,7 +55,7 @@ for y, (label, col, val) in enumerate(feats[::-1]):
     b.text(107, y, f"+{c4 - c1:.0f}", va="center", ha="left", fontsize=7.8, color=INK2)
 b.text(107, len(feats) - 0.35, "gain", va="center", ha="left", fontsize=7.8, color=INK2)
 b.set_yticks(range(len(feats))); b.set_yticklabels([f[0] for f in feats[::-1]]); b.set_ylim(-0.6, len(feats) - 0.2)
-style(b); b.set_title("B.  ALLaM 7B: C1 vs. C4 by item type", loc="left", fontsize=9, fontweight="bold", pad=8)
+style(b); b.set_title("(B) ALLaM 7B by item type", loc="left", fontsize=9, pad=8)
 for yy in (1.5, 3.5, 5.5):
     b.axhline(yy, color=GRID, lw=0.6, ls=(0, (2, 2)))
 
