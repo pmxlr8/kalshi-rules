@@ -43,7 +43,7 @@ function table(rows, cols, size = SZ - 2) {
 
 const blocks = TEXT.blocks.map(b => {
   if (b.h) return H(b.h);
-  if (b.p) return P(b.p, b.after);
+  if (b.p !== undefined) return P(b.p, b.after);
   if (b.b) return B(b.b);
   if (b.table) return table(b.table, b.cols, b.size);
   throw new Error('bad block ' + JSON.stringify(b));
