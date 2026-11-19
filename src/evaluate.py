@@ -1,32 +1,47 @@
-import argparse, json
+import argparse, json, re
 import numpy as np
 import pandas as pd
 from config import DEFAULT_MODEL, RUNS, slug
 from methods import evaluate_spec, normalize_spec
 
-DERIVED = {"C4_spec_code": "C4N_spec_code_norm", "O2_C4_gold_value": "O2N_gold_value_norm"}
+VERDICT_WORD = re.compile(r"verdict(?:\s+(?:is|would be|should be))?\W{0,15}(yes|no|abstain)\b", re.I)
+SPEC_METHODS = {"C4_spec_code", "O1_C4_gold_spec", "O2_C4_gold_value"}
 
-def add_derived(df):
-    """C4N / O2N: the saved C4 / O2 outputs, re-scored with the format-tolerant spec reader.
-    No new LLM calls. The gap C4N - C4 is the share of C4 errors that are only format slips."""
-    extra = []
-    for src, name in DERIVED.items():
-        d = df[df.method == src].copy()
-        if d.empty:
-            continue
-        d["verdict"] = [evaluate_spec(normalize_spec(sp), None if pd.isna(v) else float(v))
-                        for sp, v in zip(d.spec, d.pred_value)]
-        d["correct"] = d.verdict == d.gold
-        d["method"] = name
-        extra.append(d)
-    return pd.concat([df] + extra, ignore_index=True) if extra else df
+def lenient_verdict(raw):
+    """Last 'verdict ... YES/NO/ABSTAIN' in free text, for answers that skip the JSON format."""
+    m = VERDICT_WORD.findall(raw or "")
+    return m[-1].upper() if m else "INVALID"
+
+def add_tolerant(df):
+    """Second, format-tolerant score for every row (no new LLM calls):
+    free-text methods: an INVALID answer is re-read with lenient_verdict;
+    spec methods: the saved spec is re-read with normalize_spec (comparator words, bounds in the wrong field).
+    The gap correct_tol - correct is the share of errors that are only format slips."""
+    vt = []
+    for m, v, raw, sp, pv in zip(df.method, df.verdict, df.raw, df.get("spec", [None] * len(df)), df.get("pred_value", [None] * len(df))):
+        if m in SPEC_METHODS:
+            vt.append(evaluate_spec(normalize_spec(sp), None if pv is None or pd.isna(pv) else float(pv)))
+        elif v == "INVALID" and not str(m).startswith("C3"):
+            vt.append(lenient_verdict(raw))
+        else:
+            vt.append(v)
+    df = df.copy()
+    df["verdict_tol"] = vt
+    df["correct_tol"] = df.verdict_tol == df.gold
+    return df
+
+def tolerant_view(df):
+    """The same rows, scored with the tolerant reading (for paired tests and slices)."""
+    d = df.copy()
+    d["verdict"], d["correct"] = d.verdict_tol, d.correct_tol
+    return d
 
 def load(model_dir, evidence, derived=True):
     rows = []
     for p in sorted((RUNS / slug(model_dir) / evidence).glob("*.jsonl")):
         rows += [json.loads(l) for l in p.open()]
     df = pd.DataFrame(rows)
-    return add_derived(df) if derived and len(df) else df
+    return add_tolerant(df) if derived and len(df) else df
 
 def bal_acc(g):
     pos, neg = g[g.gold == "YES"], g[g.gold == "NO"]

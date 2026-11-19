@@ -141,7 +141,7 @@ def num_loose(x):
     return float(m.group(0)) if m else None
 
 def normalize_spec(spec):
-    """Format-tolerant reading of an LLM spec, used post hoc (C4N). It only repairs the format:
+    """Format-tolerant reading of an LLM spec, used post hoc (tolerant scoring). It only repairs the format:
     comparator words, a [low, high] pair put in "threshold", a one-sided bound put in low or high."""
     if not isinstance(spec, dict):
         return spec
