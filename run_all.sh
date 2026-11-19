@@ -7,6 +7,7 @@ WORKERS="${WORKERS:-8}"
 REPORT_METHODS="B1_no_evidence,B2_no_rules,C1_direct,C2_cot,C2SC_cot_vote5,C3_spec_prose,C4_spec_code,O1_C4_gold_spec,O2_C4_gold_value,O3_C2_gold_spec_text"
 CLEAN_METHODS="C1_direct,C2_cot,C4_spec_code"
 
+python3 preflight.py "$MODEL"
 python3 features.py
 for SPLIT in $SPLITS; do
   python3 run.py --model "$MODEL" --split "$SPLIT" --evidence report --methods "$REPORT_METHODS" --workers "$WORKERS"

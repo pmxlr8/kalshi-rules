@@ -42,8 +42,8 @@ number in the report would flip the answer (`distractor_flip`), departure from n
 ## Run
 ```bash
 pip install -r requirements.txt
-echo "GROQ_API_KEY=..." > .env          # never commit this file
-cd src && python3 list_models.py       # check model names
+cp .env.example .env                   # then paste your key after GROQ_API_KEY= (never commit .env)
+cd src && python3 preflight.py         # checks the key and the model, makes 1 test call
 cd .. && SPLITS=dev ./run_all.sh       # tune prompts on dev only
 SPLITS=test ./run_all.sh               # then run test once
 ```
