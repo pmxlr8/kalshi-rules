@@ -1,0 +1,7 @@
+{
+  "name": "kalshi-rules-docs",
+  "private": true,
+  "description": "Builds the milestone reports from results/m3/numbers.json",
+  "scripts": { "m3": "node make_m3.js" },
+  "dependencies": { "docx": "9.5.1" }
+}

@@ -12,21 +12,27 @@ def lenient_verdict(raw):
     m = VERDICT_WORD.findall(raw or "")
     return m[-1].upper() if m else "INVALID"
 
-def add_tolerant(df):
+def add_tolerant(df, model=None, evidence=None):
     """Second, format-tolerant score for every row (no new LLM calls):
     free-text methods: an INVALID answer is re-read with lenient_verdict;
-    spec methods: the saved spec is re-read with normalize_spec (comparator words, bounds in the wrong field).
+    spec methods: the saved spec is re-read with normalize_spec (comparator words, bounds in the wrong field),
+    and a value lost to cut-off extractor JSON is read from the cached text (replay.py).
     The gap correct_tol - correct is the share of errors that are only format slips."""
-    vt = []
-    for m, v, raw, sp, pv in zip(df.method, df.verdict, df.raw, df.get("spec", [None] * len(df)), df.get("pred_value", [None] * len(df))):
+    vt, vals = [], []
+    for i, m, v, raw, sp, pv in zip(df.item_id, df.method, df.verdict, df.raw, df.get("spec", [None] * len(df)), df.get("pred_value", [None] * len(df))):
+        pv = None if pv is None or pd.isna(pv) else float(pv)
+        if m in SPEC_METHODS and pv is None and model and m != "O2_C4_gold_value":
+            from replay import tolerant_value  # cut-off extractor JSON: read the value it already wrote
+            pv = tolerant_value(model, i, m, evidence)
+        vals.append(pv)
         if m in SPEC_METHODS:
-            vt.append(evaluate_spec(normalize_spec(sp), None if pv is None or pd.isna(pv) else float(pv)))
+            vt.append(evaluate_spec(normalize_spec(sp), pv))
         elif v == "INVALID" and not str(m).startswith("C3"):
             vt.append(lenient_verdict(raw))
         else:
             vt.append(v)
     df = df.copy()
-    df["verdict_tol"] = vt
+    df["verdict_tol"], df["pred_value_tol"] = vt, vals
     df["correct_tol"] = df.verdict_tol == df.gold
     return df
 
@@ -41,7 +47,7 @@ def load(model_dir, evidence, derived=True):
     for p in sorted((RUNS / slug(model_dir) / evidence).glob("*.jsonl")):
         rows += [json.loads(l) for l in p.open()]
     df = pd.DataFrame(rows)
-    return add_tolerant(df) if derived and len(df) else df
+    return add_tolerant(df, model_dir, evidence) if derived and len(df) else df
 
 def bal_acc(g):
     pos, neg = g[g.gold == "YES"], g[g.gold == "NO"]

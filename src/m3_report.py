@@ -84,18 +84,32 @@ def slices(df):
     return out
 
 def c4_errors(df):
-    """Why strict C4 is wrong: format slip (the tolerant reading fixes it), spec meaning, value, or both."""
+    """Why strict C4 is wrong. First cause in this order: the extractor JSON was cut off (value recovered
+    from the cached text), a spec format slip (normalize_spec fixes it), then, for items still wrong under
+    tolerant scoring, the spec meaning or the extracted value."""
     s = df[(df.method == "C4_spec_code") & ~df.correct.astype(bool)].copy()
     if s.empty:
         return pd.DataFrame(), pd.DataFrame()
-    s["format_only"] = s.correct_tol.astype(bool)
-    s["spec_wrong"] = [evaluate_spec(normalize_spec(sp), float(v)) != g for sp, v, g in zip(s.spec, s.value, s.gold)]
-    s["value_wrong"] = [not (pd.notna(pv) and abs(float(pv) - float(v)) < 1e-6) for pv, v in zip(s.pred_value, s.value)]
-    s["cause"] = np.select([s.format_only, s.spec_wrong & s.value_wrong, s.spec_wrong, s.value_wrong],
-                           ["format slip only", "spec meaning + value", "spec meaning", "value"], "other")
-    s["value_from"] = [value_source(i, pv) if vw else "" for i, pv, vw in zip(s.item_id, s.pred_value, s.value_wrong)]
+    gv = s.value.astype(float)
+    raw_spec_ok = [evaluate_spec(sp, v) == g for sp, v, g in zip(s.spec, gv, s.gold)]
+    norm_spec_ok = [evaluate_spec(normalize_spec(sp), v) == g for sp, v, g in zip(s.spec, gv, s.gold)]
+    cut = s.pred_value.isna() & s.pred_value_tol.notna()
+    val_ok = [pd.notna(pv) and abs(pv - v) < 1e-6 for pv, v in zip(s.pred_value_tol, gv)]
+    cause = []
+    for c, r, n, vo, tol in zip(cut, raw_spec_ok, norm_spec_ok, val_ok, s.correct_tol):
+        if tol:
+            cause.append("format: extractor JSON cut off" if c else "format: spec field slip")
+        elif not n and not vo:
+            cause.append("still wrong: spec meaning + value")
+        elif not n:
+            cause.append("still wrong: spec meaning")
+        else:
+            cause.append("still wrong: value")
+    s["cause"] = cause
+    s["value_from"] = [value_source(i, pv) if not vo else "" for i, pv, vo in zip(s.item_id, s.pred_value_tol, val_ok)]
+    still = s[s.cause.str.startswith("still") & s.cause.str.contains("value")]
     return s.groupby(["domain", "cause"]).size().unstack(fill_value=0), \
-        s[s.value_wrong].groupby("value_from").size().rename("n").to_frame()
+        still.groupby("value_from").size().rename("n").to_frame()
 
 def md(df):
     return df.to_markdown() if len(df) else "_(no data)_"

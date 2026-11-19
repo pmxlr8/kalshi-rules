@@ -34,7 +34,7 @@ def bundle(item, kind):
         return bundle_both(item)
     return None
 
-ROW = re.compile(r"\n\s*{name}\s+(-?\d+|MM)\s+(?:\d{{1,4}}\s+[AP]M\s+)?(-?\d+|MM)R?\s+(\d{{4}})\s+(-?\d+|MM)\s+(-?\d+|MM)\s+(-?\d+|MM)")
+ROW = re.compile(r"\n\s*{name}\s+(-?\d+|MM)\s+(?:\d{{1,2}}:?\d{{2}}\s+[AP]M\s+)?(-?\d+|MM)R?\s+(\d{{4}})\s+(-?\d+|MM)\s+(-?\d+|MM)\s+(-?\d+|MM)")
 
 def _n(x):
     try:

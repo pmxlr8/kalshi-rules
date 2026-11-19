@@ -10,8 +10,11 @@ than direct prompting or chain of thought, on **real** Kalshi markets with **rea
 - **Contracts:** settled Kalshi markets pulled from the public API (`fetch_markets.py`): weather (7 cities, daily
   high and NYC low temperature), economics (CPI, payrolls, unemployment, Fed rate, GDP) and finance (S&P 500, gas prices).
   Each market has its rules text, outcome, threshold type (`greater`, `less`, `between`, ...) and settled value.
-- **Gold:** Kalshi's structured threshold applied to the settled value reproduces the real outcome on 100% of markets
-  (`build_items.py`, `selftest.py`). So every item has an exact gold spec and gold value, with no hand labels.
+- **Gold:** Kalshi's structured threshold applied to the settled value reproduces the real outcome on 113,094 of the
+  113,095 markets with a numeric settled value, and on all 666 study items (`build_items.py`, `selftest.py`). So every
+  item has an exact gold spec and gold value, with no hand labels. 57 markets give only a text label and are left out.
+  The 1 exception is a Nasdaq-100 market whose structured threshold (26,990) differs from its rules text
+  ("above 26,989.99"); the text decided it.
 - **Evidence:** for weather, the real NWS climate report (`fetch_cli.py`), which also lists the normal, record and
   last-year values and the other daily extreme (natural distractors). Its value matches Kalshi's settlement on
   366 of 367 station-days. `clean` evidence is a one-line official value; `report_both` gives the preliminary and
