@@ -41,8 +41,11 @@ def usage(*rs):
 
 def direct(llm, it, ev, rules=True, evidence=True):
     body = contract(it, rules)
-    body += f"\n\nEvidence:\n{ev}" if evidence else "\n\nNo evidence is available. Give your best guess."
-    r, d = ask(llm, f"{body}\n\n{VERDICT_JSON}", 60)
+    if evidence:
+        r, d = ask(llm, f"{body}\n\nEvidence:\n{ev}\n\n{VERDICT_JSON}", 60)
+    else:
+        r, d = ask(llm, f"{body}\n\nNo evidence is available. You must still answer YES or NO with your best guess "
+                        f"of how this market settled; do not abstain.\n\n{VERDICT_JSON}", 60)
     return {"verdict": verdict_of(d), "confidence": conf_of(d), "raw": r["text"], **usage(r)}
 
 def cot(llm, it, ev, temperature=0.0, sample=0, extra=""):
@@ -66,8 +69,8 @@ Fields:
 - "quantity": what must be measured, in plain words (include place and date)
 - "unit": unit of the quantity
 - "comparator": one of ">", ">=", "<", "<=", "between" ("between" includes both ends)
-- "low": lower threshold number or null
-- "high": upper threshold number or null (for "<" and "<=", put the threshold here)
+- "threshold": the number to compare against, for ">", ">=", "<" and "<=" (null for "between")
+- "low", "high": the two ends, only for "between" (null otherwise)
 Return only the JSON object.
 
 {contract}"""
@@ -89,13 +92,13 @@ def write_spec(llm, it):
 
 def gold_spec(it):
     c = COMPARATORS.get(it["strike_type"])
-    lo = it["floor"] if c in (">", ">=", "between") else None
-    hi = it["cap"] if c in ("<", "<=", "between") else None
+    t = it["floor"] if c in (">", ">=") else it["cap"] if c in ("<", "<=") else None
+    lo, hi = (it["floor"], it["cap"]) if c == "between" else (None, None)
     if it["domain"] == "weather":
         q, u = f"the {it['measure']} temperature at {it['station']} on {it['obs_date']}", "degrees F"
     else:
         q, u = it["title"], ""
-    return {"quantity": q, "unit": u, "comparator": c, "low": lo, "high": hi}
+    return {"quantity": q, "unit": u, "comparator": c, "threshold": t, "low": lo, "high": hi}
 
 def extract_fact(llm, spec, ev):
     q = (spec or {}).get("quantity") or "the quantity named in the contract"
@@ -111,12 +114,13 @@ def to_num(x):
 def evaluate_spec(spec, value):
     if not spec or value is None:
         return "ABSTAIN"
-    c, lo, hi = spec.get("comparator"), to_num(spec.get("low")), to_num(spec.get("high"))
+    c = spec.get("comparator")
+    t, lo, hi = to_num(spec.get("threshold")), to_num(spec.get("low")), to_num(spec.get("high"))
     try:
-        if c == ">": ok = value > lo
-        elif c == ">=": ok = value >= lo
-        elif c == "<": ok = value < (hi if hi is not None else lo)
-        elif c == "<=": ok = value <= (hi if hi is not None else lo)
+        if c == ">": ok = value > t
+        elif c == ">=": ok = value >= t
+        elif c == "<": ok = value < t
+        elif c == "<=": ok = value <= t
         elif c == "between": ok = lo <= value <= hi
         else: return "ABSTAIN"
     except TypeError:

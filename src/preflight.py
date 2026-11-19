@@ -1,3 +1,4 @@
+from config import DEFAULT_MODEL
 import os, sys
 from llm import LLM, load_env
 
@@ -14,4 +15,4 @@ def main(model):
     print(f"key works, model {model} answered: {r['text'].strip()!r} ({r['latency']}s)")
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else os.environ.get("MODEL", "llama-3.1-8b-instant"))
+    main(sys.argv[1] if len(sys.argv) > 1 else os.environ.get("MODEL", DEFAULT_MODEL))

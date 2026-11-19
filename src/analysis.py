@@ -4,7 +4,7 @@ import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from config import ROOT, PROC
+from config import DEFAULT_MODEL, ROOT, PROC, slug
 from evaluate import load, summary, paired_diff, stage_table
 from methods import evaluate_spec
 
@@ -106,10 +106,10 @@ def md(df):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--model", default="llama-3.1-8b-instant")
+    ap.add_argument("--model", default=DEFAULT_MODEL)
     ap.add_argument("--evidence", default="report")
     a = ap.parse_args()
-    out = ROOT / "results" / a.model / a.evidence
+    out = ROOT / "results" / slug(a.model) / a.evidence
     out.mkdir(parents=True, exist_ok=True)
     full = with_features(load(a.model, a.evidence))
     parts = ["# Results: " + a.model + " / evidence=" + a.evidence]

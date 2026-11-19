@@ -1,7 +1,7 @@
 import argparse, json, re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import pandas as pd
-from config import PROC, RUNS
+from config import DEFAULT_MODEL, PROC, RUNS, slug
 from evidence import bundle
 from methods import METHODS, gold_spec
 from llm import LLM
@@ -21,7 +21,7 @@ class FakeLLM:
         return {"text": t, "in_tok": len(u) // 4, "out_tok": 20, "latency": 0.0, "cached": False}
 
 def out_path(model, evidence, method):
-    p = RUNS / re.sub(r"[^A-Za-z0-9_.-]", "_", model) / evidence / f"{method}.jsonl"
+    p = RUNS / slug(model) / evidence / f"{method}.jsonl"
     p.parent.mkdir(parents=True, exist_ok=True)
     return p
 
@@ -44,7 +44,7 @@ def run_one(llm, method, it, evidence):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--model", default="llama-3.1-8b-instant")
+    ap.add_argument("--model", default=DEFAULT_MODEL)
     ap.add_argument("--methods", default="C1_direct,C2_cot,C4_spec_code")
     ap.add_argument("--split", default="dev")
     ap.add_argument("--domains", default="weather,fin,econ")
@@ -66,9 +66,17 @@ def main():
         n_ok = n = 0
         with ThreadPoolExecutor(workers) as ex, path.open("a") as f:
             futs = [ex.submit(run_one, llm, method, it.to_dict(), a.evidence) for it in todo]
+            fails = 0
             for fu in as_completed(futs):
-                rec = fu.result()
-                f.write(json.dumps(rec, default=str) + "\n")
+                try:
+                    rec = fu.result()
+                except Exception as e:
+                    if "per day" in str(e) or "(TPD)" in str(e) or "(RPD)" in str(e):
+                        raise SystemExit(f"daily limit reached: {str(e)[:200]}")
+                    fails += 1
+                    print(f"  item failed ({type(e).__name__}): {str(e)[:150]}", flush=True)
+                    continue
+                f.write(json.dumps(rec, default=str) + "\n"); f.flush()
                 n += 1; n_ok += rec["correct"]
         print(f"{method}: {n} new items, accuracy on new {n_ok / max(n, 1):.3f} -> {path.relative_to(RUNS)}")
 

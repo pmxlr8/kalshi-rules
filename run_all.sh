@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/src"
-MODEL="${MODEL:-llama-3.1-8b-instant}"
+MODEL="${MODEL:-qwen/qwen3.8-27b}"
 SPLITS="${SPLITS:-dev}"
 WORKERS="${WORKERS:-8}"
 REPORT_METHODS="B1_no_evidence,B2_no_rules,C1_direct,C2_cot,C2SC_cot_vote5,C3_spec_prose,C4_spec_code,O1_C4_gold_spec,O2_C4_gold_value,O3_C2_gold_spec_text"

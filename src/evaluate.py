@@ -1,12 +1,12 @@
 import argparse, json
 import numpy as np
 import pandas as pd
-from config import RUNS
+from config import DEFAULT_MODEL, RUNS, slug
 from methods import evaluate_spec
 
 def load(model_dir, evidence):
     rows = []
-    for p in sorted((RUNS / model_dir / evidence).glob("*.jsonl")):
+    for p in sorted((RUNS / slug(model_dir) / evidence).glob("*.jsonl")):
         rows += [json.loads(l) for l in p.open()]
     return pd.DataFrame(rows)
 
@@ -50,7 +50,7 @@ def stage_table(df):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--model", default="llama-3.1-8b-instant")
+    ap.add_argument("--model", default=DEFAULT_MODEL)
     ap.add_argument("--evidence", default="report")
     ap.add_argument("--split", default="dev")
     ap.add_argument("--ref", default="C2_cot")

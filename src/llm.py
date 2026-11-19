@@ -1,6 +1,7 @@
-import hashlib, json, os, threading, time
+import hashlib, json, os, random, re, threading, time
+from collections import deque
 from openai import OpenAI, RateLimitError, APIError
-from config import ROOT, RUNS
+from config import ROOT, RUNS, REASONING, MIN_COMPLETION
 
 def load_env():
     p = ROOT / ".env"
@@ -28,6 +29,26 @@ class Cache:
             with self.path.open("a") as f:
                 f.write(json.dumps({"key": key, "val": val}) + "\n")
 
+class TokenLimiter:
+    def __init__(self, tpm):
+        self.tpm, self.lock, self.log = tpm, threading.Lock(), deque()
+
+    def wait(self, est):
+        if not self.tpm:
+            return
+        while True:
+            with self.lock:
+                now = time.time()
+                while self.log and now - self.log[0][0] > 60:
+                    self.log.popleft()
+                used = sum(t for _, t in self.log)
+                if used + est <= self.tpm:
+                    self.log.append((now, est))
+                    return
+            time.sleep(1.0)
+
+LIMITERS = {}
+
 class LLM:
     def __init__(self, model, base_url=None, key_env="GROQ_API_KEY", cache_path=RUNS / "cache.jsonl"):
         load_env()
@@ -35,24 +56,34 @@ class LLM:
         self.client = OpenAI(base_url=base_url or os.environ.get("LLM_BASE_URL", "https://api.groq.com/openai/v1"),
                              api_key=os.environ.get(key_env, "missing"))
         self.cache = Cache(cache_path)
+        tpm = int(os.environ.get("LLM_TPM", "0"))
+        self.limiter = LIMITERS.setdefault(model, TokenLimiter(tpm))
 
     def chat(self, messages, temperature=0.0, max_tokens=400, sample=0):
-        key = hashlib.sha256(json.dumps([self.model, messages, temperature, max_tokens, sample]).encode()).hexdigest()
+        effort = REASONING.get(self.model)
+        max_tokens = max(max_tokens, MIN_COMPLETION.get(self.model, 0))
+        key = hashlib.sha256(json.dumps([self.model, messages, temperature, max_tokens, sample, effort]).encode()).hexdigest()
         hit = self.cache.get(key)
         if hit:
             return {**hit, "cached": True}
-        for attempt in range(6):
+        extra = {"reasoning_effort": effort} if effort else {}
+        est = int(len(json.dumps(messages)) / 3.2) + 20
+        for attempt in range(40):
             try:
+                self.limiter.wait(est)
                 t0 = time.time()
                 r = self.client.chat.completions.create(model=self.model, messages=messages,
                                                         temperature=temperature, max_tokens=max_tokens,
-                                                        seed=sample)
+                                                        seed=sample, extra_body=extra)
                 val = {"text": r.choices[0].message.content or "",
                        "in_tok": r.usage.prompt_tokens, "out_tok": r.usage.completion_tokens,
                        "latency": round(time.time() - t0, 3)}
                 self.cache.put(key, val)
                 return {**val, "cached": False}
             except (RateLimitError, APIError) as e:
-                if attempt == 5:
+                msg = str(e)
+                if "per day" in msg or "(TPD)" in msg or "(RPD)" in msg or attempt == 39:
                     raise
-                time.sleep(min(60, 2 ** attempt * 2))
+                m = re.search(r"try again in ([\d.]+)(ms|s|m)", msg)
+                wait = float(m.group(1)) * {"ms": 0.001, "s": 1, "m": 60}[m.group(2)] if m else min(60, 2 ** min(attempt, 5))
+                time.sleep(wait + random.uniform(0.5, 2.0))
