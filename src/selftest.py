@@ -1,11 +1,15 @@
 import pandas as pd
 from config import PROC
-from methods import evaluate_spec, gold_spec, last_json, verdict_of
+from methods import evaluate_spec, gold_spec, last_json, normalize_spec, verdict_of
 
 def main():
     items = pd.read_pickle(PROC / "items_study.pkl")
     agree = [evaluate_spec(gold_spec(r), r["value"]) == r["result"].upper() for _, r in items.iterrows()]
     assert all(agree), f"gold spec disagrees on {len(agree) - sum(agree)} items"
+    agree_n = [evaluate_spec(normalize_spec(gold_spec(r)), r["value"]) == r["result"].upper() for _, r in items.iterrows()]
+    assert all(agree_n), "normalize_spec changes a gold spec decision"
+    assert evaluate_spec(normalize_spec({"comparator": "between", "threshold": [47, 48]}), 48.0) == "YES"
+    assert evaluate_spec(normalize_spec({"comparator": "greater than", "threshold": "68°F"}), 68.0) == "NO"
     assert evaluate_spec({"comparator": ">", "threshold": 56}, 56.0) == "NO"
     assert evaluate_spec({"comparator": ">=", "threshold": 56}, 56.0) == "YES"
     assert evaluate_spec({"comparator": "<", "threshold": 49}, 49.0) == "NO"

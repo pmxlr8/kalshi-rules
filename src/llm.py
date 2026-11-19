@@ -49,6 +49,16 @@ class TokenLimiter:
 
 LIMITERS = {}
 
+def wait_seconds(msg):
+    """Parse Groq's 'try again in 1h2m3.4s' (or '850ms') into seconds. None if absent."""
+    m = re.search(r"try again in ((?:[\d.]+h)?(?:[\d.]+m(?!s))?(?:[\d.]+s)?(?:[\d.]+ms)?)", msg)
+    if not m or not m.group(1):
+        return None
+    total = 0.0
+    for num, unit in re.findall(r"([\d.]+)(ms|h|m|s)", m.group(1)):
+        total += float(num) * {"h": 3600, "m": 60, "s": 1, "ms": 0.001}[unit]
+    return total
+
 class LLM:
     def __init__(self, model, base_url=None, key_env="GROQ_API_KEY", cache_path=RUNS / "cache.jsonl"):
         load_env()
@@ -82,8 +92,15 @@ class LLM:
                 return {**val, "cached": False}
             except (RateLimitError, APIError) as e:
                 msg = str(e)
-                if "per day" in msg or "(TPD)" in msg or "(RPD)" in msg or attempt == 39:
+                daily = "per day" in msg or "(TPD)" in msg or "(RPD)" in msg
+                if daily and os.environ.get("LLM_WAIT_DAILY") == "1":
+                    # free tier: the daily bucket refills slowly, so wait and retry instead of stopping
+                    wait = min(max(wait_seconds(msg) or 300, 30), 1800)
+                    print(f"  daily cap, waiting {wait:.0f}s", flush=True)
+                    time.sleep(wait + random.uniform(1, 10))
+                    continue
+                if daily or attempt == 39:
                     raise
-                m = re.search(r"try again in ([\d.]+)(ms|s|m)", msg)
-                wait = float(m.group(1)) * {"ms": 0.001, "s": 1, "m": 60}[m.group(2)] if m else min(60, 2 ** min(attempt, 5))
+                wait = wait_seconds(msg)
+                wait = wait if wait is not None else min(60, 2 ** min(attempt, 5))
                 time.sleep(wait + random.uniform(0.5, 2.0))

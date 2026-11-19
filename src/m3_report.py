@@ -1,0 +1,124 @@
+"""Cross-model tables for the Milestone 3 report (dev split). Writes results/m3/tables.md.
+Every number in the report must come from this file's output."""
+import json, warnings
+import numpy as np
+import pandas as pd
+from config import ROOT, PROC, RAW
+from evaluate import load, bal_acc, paired_diff
+from evidence import cli_numbers
+from methods import evaluate_spec, normalize_spec, gold_spec
+
+warnings.filterwarnings("ignore")
+MODELS = [("allam-2-7b", "ALLaM 7B"), ("qwen/qwen3.8-27b", "Qwen 27B"), ("openai/gpt-oss-20b", "gpt-oss 20B")]
+EVID = ["report", "report_both"]
+ORDER = ["B1_no_evidence", "C1_direct", "C2_cot", "C3_spec_prose", "C4_spec_code", "C4N_spec_code_norm",
+         "O1_C4_gold_spec", "O2_C4_gold_value", "O2N_gold_value_norm"]
+PAIRS = [("C2_cot", "C1_direct"), ("C4_spec_code", "C1_direct"), ("C4N_spec_code_norm", "C1_direct"),
+         ("C4N_spec_code_norm", "C2_cot"), ("C3_spec_prose", "C4_spec_code")]
+PIL = {"KXHIGHNY": "CLINYC", "KXLOWTNYC": "CLINYC", "KXHIGHCHI": "CLIMDW", "KXHIGHMIA": "CLIMIA",
+       "KXHIGHAUS": "CLIAUS", "KXHIGHLAX": "CLILAX", "KXHIGHDEN": "CLIDEN", "KXHIGHPHIL": "CLIPHL"}
+
+ITEMS = pd.read_pickle(PROC / "items_study_feat.pkl").set_index("item_id")
+
+def prelim_value(item):
+    pil = PIL.get(item["series"])
+    if not pil:
+        return None
+    d = json.load(open(RAW / "cli" / f"{pil}.json")).get(str(item["obs_date"])[:10], {})
+    v = (d.get("prelim") or {}).get("max" if item["measure"] == "maximum" else "min")
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+def value_source(item_id, pred):
+    """Name the report number that a wrong extracted value matches (record, normal, ...)."""
+    if pred is None or pd.isna(pred):
+        return "no value"
+    it = ITEMS.loc[item_id].to_dict(); it["item_id"] = item_id
+    if it["domain"] != "weather":
+        return "other"
+    nums = cli_numbers(it)
+    want = "maximum" if it["measure"] == "maximum" else "minimum"
+    other = "minimum" if want == "maximum" else "maximum"
+    for k, v in (nums.get(want) or {}).items():
+        if k != "observed" and v is not None and abs(float(v) - float(pred)) < 1e-6:
+            return k
+    if (nums.get(other) or {}).get("observed") is not None and abs(float(nums[other]["observed"]) - float(pred)) < 1e-6:
+        return "other extreme"
+    pv = prelim_value(it)
+    if pv is not None and abs(pv - float(pred)) < 1e-6:
+        return "preliminary report"
+    return "other"
+
+def overall(df):
+    rows = []
+    for m in [x for x in ORDER if x in set(df.method)]:
+        g = df[df.method == m]
+        rows.append({"method": m, "n": len(g), "acc": g.correct.mean(), "bal_acc": bal_acc(g),
+                     "no_answer": g.verdict.isin(["ABSTAIN", "INVALID"]).mean(),
+                     "calls": g.calls.mean(), "tokens": (g.in_tok + g.out_tok).mean()})
+    return pd.DataFrame(rows).round(3)
+
+def pairs(df):
+    rows = []
+    for a, b in PAIRS:
+        if {a, b} <= set(df.method):
+            d, lo, hi, n = paired_diff(df, a, b)
+            rows.append({"compare": f"{a} - {b}", "n": n, "diff": d, "ci_low": lo, "ci_high": hi})
+    return pd.DataFrame(rows).round(3)
+
+def slices(df):
+    d = df.join(ITEMS[["near", "distractor_flip"]], on="item_id")
+    d["shape"] = np.where(d.strike_type == "between", "between (2 bounds)", "one-sided")
+    out = []
+    for col in ["domain", "near", "distractor_flip", "shape"]:
+        t = d[d.method.isin(["C1_direct", "C2_cot", "C4_spec_code", "C4N_spec_code_norm"])]
+        p = t.pivot_table(index=col, columns="method", values="correct", aggfunc="mean").round(3)
+        p.insert(0, "n_items", t.groupby(col).item_id.nunique())
+        out.append((col, p))
+    return out
+
+def c4_errors(df):
+    """Why C4 is wrong: format slip (the tolerant reader fixes it), spec meaning, value, or both."""
+    s = df[(df.method == "C4_spec_code") & ~df.correct.astype(bool)].copy()
+    if s.empty:
+        return pd.DataFrame(), pd.DataFrame()
+    n = df[df.method == "C4N_spec_code_norm"].set_index("item_id").correct
+    s["format_only"] = s.item_id.map(n).astype(bool)
+    s["spec_wrong"] = [evaluate_spec(normalize_spec(sp), float(v)) != g for sp, v, g in zip(s.spec, s.value, s.gold)]
+    s["value_wrong"] = [not (pd.notna(pv) and abs(float(pv) - float(v)) < 1e-6) for pv, v in zip(s.pred_value, s.value)]
+    s["cause"] = np.select([s.format_only, s.spec_wrong & s.value_wrong, s.spec_wrong, s.value_wrong],
+                           ["format slip only", "spec meaning + value", "spec meaning", "value"], "other")
+    s["value_from"] = [value_source(i, pv) if vw else "" for i, pv, vw in zip(s.item_id, s.pred_value, s.value_wrong)]
+    return s.groupby(["domain", "cause"]).size().unstack(fill_value=0), \
+        s[s.value_wrong].groupby("value_from").size().rename("n").to_frame()
+
+def md(df):
+    return df.to_markdown() if len(df) else "_(no data)_"
+
+def main():
+    parts = ["# Milestone 3 tables (dev split, generated by src/m3_report.py)\n"]
+    for model, name in MODELS:
+        for ev in EVID:
+            try:
+                df = load(model, ev)
+            except Exception:
+                continue
+            if df.empty:
+                continue
+            df = df[df.split == "dev"]
+            if df.empty:
+                continue
+            parts += [f"\n## {name} | evidence: {ev}\n", "\n### overall\n", md(overall(df)),
+                      "\n\n### paired differences (95% CI, bootstrap by event)\n", md(pairs(df))]
+            for col, p in slices(df):
+                parts += [f"\n\n### accuracy by {col}\n", md(p)]
+            e, v = c4_errors(df)
+            parts += ["\n\n### C4 error causes\n", md(e), "\n\n### where a wrong C4 value came from\n", md(v)]
+    out = ROOT / "results" / "m3"; out.mkdir(parents=True, exist_ok=True)
+    (out / "tables.md").write_text("\n".join(parts) + "\n")
+    print("\n".join(parts))
+
+if __name__ == "__main__":
+    main()

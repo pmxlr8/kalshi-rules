@@ -2,13 +2,31 @@ import argparse, json
 import numpy as np
 import pandas as pd
 from config import DEFAULT_MODEL, RUNS, slug
-from methods import evaluate_spec
+from methods import evaluate_spec, normalize_spec
 
-def load(model_dir, evidence):
+DERIVED = {"C4_spec_code": "C4N_spec_code_norm", "O2_C4_gold_value": "O2N_gold_value_norm"}
+
+def add_derived(df):
+    """C4N / O2N: the saved C4 / O2 outputs, re-scored with the format-tolerant spec reader.
+    No new LLM calls. The gap C4N - C4 is the share of C4 errors that are only format slips."""
+    extra = []
+    for src, name in DERIVED.items():
+        d = df[df.method == src].copy()
+        if d.empty:
+            continue
+        d["verdict"] = [evaluate_spec(normalize_spec(sp), None if pd.isna(v) else float(v))
+                        for sp, v in zip(d.spec, d.pred_value)]
+        d["correct"] = d.verdict == d.gold
+        d["method"] = name
+        extra.append(d)
+    return pd.concat([df] + extra, ignore_index=True) if extra else df
+
+def load(model_dir, evidence, derived=True):
     rows = []
     for p in sorted((RUNS / slug(model_dir) / evidence).glob("*.jsonl")):
         rows += [json.loads(l) for l in p.open()]
-    return pd.DataFrame(rows)
+    df = pd.DataFrame(rows)
+    return add_derived(df) if derived and len(df) else df
 
 def bal_acc(g):
     pos, neg = g[g.gold == "YES"], g[g.gold == "NO"]

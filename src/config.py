@@ -28,7 +28,7 @@ def domain_of(series):
 
 DEFAULT_MODEL = "qwen/qwen3.8-27b"
 REASONING = {"qwen/qwen3.8-27b": "none", "openai/gpt-oss-20b": "low", "openai/gpt-oss-120b": "low"}
-MIN_COMPLETION = {"openai/gpt-oss-20b": 1024, "openai/gpt-oss-120b": 1024}
+MIN_COMPLETION = {"openai/gpt-oss-20b": 1024, "openai/gpt-oss-120b": 1024, "allam-2-7b": 320}  # never let the cap cut an answer
 
 def slug(model):
     return re.sub(r"[^A-Za-z0-9_.-]", "_", model)

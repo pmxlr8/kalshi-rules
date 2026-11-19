@@ -127,6 +127,45 @@ def evaluate_spec(spec, value):
         return "ABSTAIN"
     return "YES" if ok else "NO"
 
+CMP_WORDS = [("greater than or equal", ">="), ("at least", ">="), ("≥", ">="), ("=>", ">="), (">=", ">="),
+             ("less than or equal", "<="), ("at most", "<="), ("≤", "<="), ("=<", "<="), ("<=", "<="),
+             ("greater", ">"), ("above", ">"), ("more than", ">"), ("exceed", ">"), (">", ">"),
+             ("less", "<"), ("below", "<"), ("under", "<"), ("<", "<"), ("between", "between"), ("range", "between")]
+
+def num_loose(x):
+    """First number in x (handles '68°F', '$4.35', '-0.2%'). None if there is none."""
+    v = to_num(x)
+    if v is not None:
+        return v
+    m = re.search(r"-?\d+(?:\.\d+)?", str(x).replace(",", "")) if x is not None else None
+    return float(m.group(0)) if m else None
+
+def normalize_spec(spec):
+    """Format-tolerant reading of an LLM spec, used post hoc (C4N). It only repairs the format:
+    comparator words, a [low, high] pair put in "threshold", a one-sided bound put in low or high."""
+    if not isinstance(spec, dict):
+        return spec
+    s = dict(spec)
+    c = str(s.get("comparator") or "").strip().lower()
+    s["comparator"] = next((sym for w, sym in CMP_WORDS if w in c), c)
+    t = s.get("threshold")
+    if s["comparator"] == "between":
+        lo, hi = num_loose(s.get("low")), num_loose(s.get("high"))
+        if (lo is None or hi is None) and t is not None:
+            parts = t if isinstance(t, (list, tuple)) else re.findall(r"-?\d+(?:\.\d+)?", str(t).replace(",", ""))
+            if len(parts) == 2:
+                lo, hi = num_loose(parts[0]), num_loose(parts[1])
+        if lo is not None and hi is not None and lo > hi:
+            lo, hi = hi, lo
+        s["low"], s["high"] = lo, hi
+    else:
+        v = num_loose(t)
+        if v is None:
+            ends = [num_loose(s.get(k)) for k in ("low", "high") if num_loose(s.get(k)) is not None]
+            v = ends[0] if len(ends) == 1 else None
+        s["threshold"] = v
+    return s
+
 def structured(llm, it, ev, apply="code", spec_override=None, value_override=None):
     rs = []
     if spec_override is None:
