@@ -76,6 +76,8 @@ cd src && python3 m3_report.py && python3 audit_c4.py && python3 m3_numbers.py &
 cd ../docs && node make_m3_pdf.js          # docs/Milestone3_Progress_Report.pdf
 ```
 Every number in the PDF is read from `results/m3/numbers.json`; a missing number stops the build.
+The submitted PDF was built from the run outputs at git tag `milestone3`. Later runs add rows to `runs/`, so to
+rebuild the exact submitted numbers, check out that tag first.
 
 **Strict scoring** needs the exact output format and is the main result (what a deployed system would get).
 **Tolerant scoring** estimates performance after deterministic post-processing of common schema and serialization
