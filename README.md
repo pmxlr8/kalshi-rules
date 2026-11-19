@@ -62,3 +62,16 @@ cd src
 python3 fetch_markets.py && python3 fetch_cli.py && python3 build_items.py
 python3 check_evidence.py && python3 sample.py && python3 features.py && python3 selftest.py
 ```
+
+## Milestone 3 report
+```bash
+cd src && python3 m3_report.py && python3 m3_numbers.py && python3 m3_figure.py   # tables, numbers, figure
+cd ../docs && node make_m3_pdf.js                                                  # docs/Milestone3_Progress_Report.pdf
+```
+Every number in the PDF is read from `results/m3/numbers.json`; a missing number stops the build.
+Strict scoring needs the exact output format. Tolerant scoring re-reads the saved outputs with format repairs
+only (no new LLM calls), so the gap between the two is pure format failure.
+
+## Free Groq tier
+Each model has its own daily token limit, so `./run_free_tier.sh` runs one queue per model and waits at the cap
+(`LLM_WAIT_DAILY=1`) instead of stopping. The test split needs a paid tier.

@@ -1,0 +1,847 @@
+{
+ "data": {
+  "markets": 113152,
+  "series": 21,
+  "numeric_value": 113095,
+  "text_label_only": 57,
+  "gold_agree_numeric": 113094,
+  "first_close": "2026-09-11",
+  "last_close": "2026-11-16",
+  "station_days": 375,
+  "missing_reports": 8,
+  "value_mismatch": 1,
+  "study": 666,
+  "events": 100,
+  "by_domain": {
+   "weather": 384,
+   "fin": 144,
+   "econ": 138
+  },
+  "by_split": {
+   "test": 504,
+   "dev": 162
+  },
+  "events_by_split": {
+   "dev": 25,
+   "test": 75
+  },
+  "yes_rate": {
+   "econ": 0.464,
+   "fin": 0.375,
+   "weather": 0.167
+  },
+  "dev_near": 51,
+  "dev_dflip": 43,
+  "test_dflip": 172,
+  "weather_dflip_share": 0.56,
+  "revisions": {
+   "dev": {
+    "n": 84,
+    "differs": 6,
+    "flips": 2
+   },
+   "test": {
+    "n": 300,
+    "differs": 12,
+    "flips": 2
+   }
+  }
+ },
+ "pilot": {
+  "B1_no_evidence": {
+   "n": 12,
+   "correct": 0,
+   "abstain": 10
+  },
+  "C1_direct": {
+   "n": 12,
+   "correct": 12,
+   "abstain": 0
+  },
+  "C2_cot": {
+   "n": 12,
+   "correct": 12,
+   "abstain": 0
+  },
+  "C3_spec_prose": {
+   "n": 12,
+   "correct": 12,
+   "abstain": 0
+  },
+  "C4_spec_code": {
+   "n": 12,
+   "correct": 4,
+   "abstain": 8
+  },
+  "C4_v1_tolerant": 12,
+  "C4_v2_same_items": {
+   "n": 12,
+   "correct": 12
+  }
+ },
+ "errors": {
+  "ALLaM 7B | report": {
+   "c1_n": 162,
+   "c1_invalid_strict": 8,
+   "c1_abstain": 0,
+   "c1_yes_rate": 0.488,
+   "gold_yes_rate": 0.296,
+   "weather": {
+    "c1_errors": 30,
+    "yes_on_no": 27,
+    "kinds": {
+     "no value stated": 18,
+     "wrong value": 7,
+     "right value, wrong comparison": 5
+    },
+    "c4_has": 30,
+    "c4_fixes": 27
+   },
+   "all": {
+    "c1_errors": 37,
+    "yes_on_no": 34,
+    "kinds": null,
+    "c4_has": 37,
+    "c4_fixes": 34
+   }
+  },
+  "ALLaM 7B | report_both": {
+   "c1_n": 7,
+   "c1_invalid_strict": 7,
+   "c1_abstain": 0,
+   "c1_yes_rate": 0.0,
+   "gold_yes_rate": 0.0,
+   "weather": {
+    "c1_errors": 5,
+    "yes_on_no": 0,
+    "kinds": {
+     "no value stated": 0,
+     "wrong value": 2,
+     "right value, wrong comparison": 3
+    },
+    "c4_has": 0,
+    "c4_fixes": 0
+   },
+   "all": {
+    "c1_errors": 5,
+    "yes_on_no": 0,
+    "kinds": null,
+    "c4_has": 0,
+    "c4_fixes": 0
+   }
+  },
+  "Qwen 27B | report": {
+   "c1_n": 162,
+   "c1_invalid_strict": 0,
+   "c1_abstain": 0,
+   "c1_yes_rate": 0.296,
+   "gold_yes_rate": 0.296,
+   "weather": {
+    "c1_errors": 0,
+    "yes_on_no": 0,
+    "kinds": {
+     "no value stated": 0,
+     "wrong value": 0,
+     "right value, wrong comparison": 0
+    },
+    "c4_has": 0,
+    "c4_fixes": 0
+   },
+   "all": {
+    "c1_errors": 0,
+    "yes_on_no": 0,
+    "kinds": null,
+    "c4_has": 0,
+    "c4_fixes": 0
+   }
+  },
+  "gpt-oss 20B | report": {
+   "c1_n": 6,
+   "c1_invalid_strict": 0,
+   "c1_abstain": 1,
+   "c1_yes_rate": 0.667,
+   "gold_yes_rate": 0.667,
+   "weather": {
+    "c1_errors": 1,
+    "yes_on_no": 0,
+    "kinds": {
+     "no value stated": 1,
+     "wrong value": 0,
+     "right value, wrong comparison": 0
+    },
+    "c4_has": 1,
+    "c4_fixes": 1
+   },
+   "all": {
+    "c1_errors": 1,
+    "yes_on_no": 0,
+    "kinds": null,
+    "c4_has": 1,
+    "c4_fixes": 1
+   }
+  },
+  "gpt-oss 20B | report_both": {
+   "c1_n": 84,
+   "c1_invalid_strict": 0,
+   "c1_abstain": 3,
+   "c1_yes_rate": 0.143,
+   "gold_yes_rate": 0.167,
+   "weather": {
+    "c1_errors": 3,
+    "yes_on_no": 0,
+    "kinds": {
+     "no value stated": 3,
+     "wrong value": 0,
+     "right value, wrong comparison": 0
+    },
+    "c4_has": 1,
+    "c4_fixes": 1
+   },
+   "all": {
+    "c1_errors": 3,
+    "yes_on_no": 0,
+    "kinds": null,
+    "c4_has": 1,
+    "c4_fixes": 1
+   }
+  }
+ },
+ "results": {
+  "ALLaM 7B | report": {
+   "overall": {
+    "C1_direct": {
+     "n": 162,
+     "acc": 0.728,
+     "acc_tol": 0.772,
+     "bal_acc": 0.789,
+     "bal_acc_tol": 0.82,
+     "no_answer": 0.049,
+     "no_answer_tol": 0.0,
+     "calls": 1.0,
+     "tokens": 1018.895
+    },
+    "C2_cot": {
+     "n": 10,
+     "acc": 0.9,
+     "acc_tol": 0.9,
+     "bal_acc": 0.938,
+     "bal_acc_tol": 0.938,
+     "no_answer": 0.0,
+     "no_answer_tol": 0.0,
+     "calls": 1.0,
+     "tokens": 1791.3
+    },
+    "C4_spec_code": {
+     "n": 162,
+     "acc": 0.568,
+     "acc_tol": 0.963,
+     "bal_acc": 0.609,
+     "bal_acc_tol": 0.956,
+     "no_answer": 0.42,
+     "no_answer_tol": 0.0,
+     "calls": 2.0,
+     "tokens": 1381.278
+    }
+   },
+   "pairs": [
+    {
+     "compare": "C2_cot - C1_direct",
+     "scoring": "strict",
+     "n": 10,
+     "diff": 0.4,
+     "ci_low": 0.2,
+     "ci_high": 0.6
+    },
+    {
+     "compare": "C2_cot - C1_direct",
+     "scoring": "tolerant",
+     "n": 10,
+     "diff": 0.2,
+     "ci_low": 0.2,
+     "ci_high": 0.2
+    },
+    {
+     "compare": "C4_spec_code - C1_direct",
+     "scoring": "strict",
+     "n": 162,
+     "diff": -0.16,
+     "ci_low": -0.299,
+     "ci_high": -0.033
+    },
+    {
+     "compare": "C4_spec_code - C1_direct",
+     "scoring": "tolerant",
+     "n": 162,
+     "diff": 0.191,
+     "ci_low": 0.095,
+     "ci_high": 0.304
+    },
+    {
+     "compare": "C4_spec_code - C2_cot",
+     "scoring": "strict",
+     "n": 10,
+     "diff": -0.7,
+     "ci_low": -0.8,
+     "ci_high": -0.6
+    },
+    {
+     "compare": "C4_spec_code - C2_cot",
+     "scoring": "tolerant",
+     "n": 10,
+     "diff": 0.1,
+     "ci_low": 0.0,
+     "ci_high": 0.2
+    }
+   ],
+   "slices": {
+    "domain": [
+     {
+      "domain": "econ",
+      "n_items": 24,
+      "C1_direct": 0.875,
+      "C2_cot": null,
+      "C4_spec_code": 1.0
+     },
+     {
+      "domain": "fin",
+      "n_items": 54,
+      "C1_direct": 0.926,
+      "C2_cot": null,
+      "C4_spec_code": 1.0
+     },
+     {
+      "domain": "weather",
+      "n_items": 84,
+      "C1_direct": 0.643,
+      "C2_cot": 0.9,
+      "C4_spec_code": 0.929
+     }
+    ],
+    "near": [
+     {
+      "near": false,
+      "n_items": 111,
+      "C1_direct": 0.811,
+      "C2_cot": 1.0,
+      "C4_spec_code": 0.973
+     },
+     {
+      "near": true,
+      "n_items": 51,
+      "C1_direct": 0.686,
+      "C2_cot": 0.8,
+      "C4_spec_code": 0.941
+     }
+    ],
+    "distractor_flip": [
+     {
+      "distractor_flip": false,
+      "n_items": 119,
+      "C1_direct": 0.824,
+      "C2_cot": 1.0,
+      "C4_spec_code": 0.992
+     },
+     {
+      "distractor_flip": true,
+      "n_items": 43,
+      "C1_direct": 0.628,
+      "C2_cot": 0.833,
+      "C4_spec_code": 0.884
+     }
+    ],
+    "shape": [
+     {
+      "shape": "between (2 bounds)",
+      "n_items": 62,
+      "C1_direct": 0.726,
+      "C2_cot": 1.0,
+      "C4_spec_code": 0.935
+     },
+     {
+      "shape": "one-sided",
+      "n_items": 100,
+      "C1_direct": 0.8,
+      "C2_cot": 0.75,
+      "C4_spec_code": 0.98
+     }
+    ]
+   },
+   "c4_causes": [
+    {
+     "domain": "weather",
+     "format: extractor JSON cut off": 34,
+     "format: spec field slip": 30,
+     "still wrong: value": 6
+    }
+   ],
+   "c4_value_from": [
+    {
+     "value_from": "last_year",
+     "n": 2
+    },
+    {
+     "value_from": "normal",
+     "n": 2
+    },
+    {
+     "value_from": "other",
+     "n": 2
+    }
+   ]
+  },
+  "ALLaM 7B | report_both": {
+   "overall": {
+    "C1_direct": {
+     "n": 7,
+     "acc": 0.0,
+     "acc_tol": 0.286,
+     "bal_acc": null,
+     "bal_acc_tol": null,
+     "no_answer": 1.0,
+     "no_answer_tol": 0.714,
+     "calls": 1.0,
+     "tokens": 3281.0
+    }
+   },
+   "pairs": [],
+   "slices": {
+    "domain": [
+     {
+      "domain": "weather",
+      "n_items": 7,
+      "C1_direct": 0.286
+     }
+    ],
+    "near": [
+     {
+      "near": false,
+      "n_items": 4,
+      "C1_direct": 0.25
+     },
+     {
+      "near": true,
+      "n_items": 3,
+      "C1_direct": 0.333
+     }
+    ],
+    "distractor_flip": [
+     {
+      "distractor_flip": false,
+      "n_items": 3,
+      "C1_direct": 0.0
+     },
+     {
+      "distractor_flip": true,
+      "n_items": 4,
+      "C1_direct": 0.5
+     }
+    ],
+    "shape": [
+     {
+      "shape": "between (2 bounds)",
+      "n_items": 3,
+      "C1_direct": 0.0
+     },
+     {
+      "shape": "one-sided",
+      "n_items": 4,
+      "C1_direct": 0.5
+     }
+    ]
+   },
+   "c4_causes": [],
+   "c4_value_from": []
+  },
+  "Qwen 27B | report": {
+   "overall": {
+    "B1_no_evidence": {
+     "n": 96,
+     "acc": 0.698,
+     "acc_tol": 0.698,
+     "bal_acc": 0.498,
+     "bal_acc_tol": 0.498,
+     "no_answer": 0.01,
+     "no_answer_tol": 0.01,
+     "calls": 1.0,
+     "tokens": 406.312
+    },
+    "C1_direct": {
+     "n": 162,
+     "acc": 1.0,
+     "acc_tol": 1.0,
+     "bal_acc": 1.0,
+     "bal_acc_tol": 1.0,
+     "no_answer": 0.0,
+     "no_answer_tol": 0.0,
+     "calls": 1.0,
+     "tokens": 587.086
+    },
+    "C2_cot": {
+     "n": 24,
+     "acc": 1.0,
+     "acc_tol": 1.0,
+     "bal_acc": 1.0,
+     "bal_acc_tol": 1.0,
+     "no_answer": 0.0,
+     "no_answer_tol": 0.0,
+     "calls": 1.0,
+     "tokens": 1038.0
+    },
+    "C4_spec_code": {
+     "n": 25,
+     "acc": 1.0,
+     "acc_tol": 1.0,
+     "bal_acc": 1.0,
+     "bal_acc_tol": 1.0,
+     "no_answer": 0.0,
+     "no_answer_tol": 0.0,
+     "calls": 2.0,
+     "tokens": 1022.52
+    }
+   },
+   "pairs": [
+    {
+     "compare": "C2_cot - C1_direct",
+     "scoring": "strict",
+     "n": 24,
+     "diff": 0.0,
+     "ci_low": 0.0,
+     "ci_high": 0.0
+    },
+    {
+     "compare": "C2_cot - C1_direct",
+     "scoring": "tolerant",
+     "n": 24,
+     "diff": 0.0,
+     "ci_low": 0.0,
+     "ci_high": 0.0
+    },
+    {
+     "compare": "C4_spec_code - C1_direct",
+     "scoring": "strict",
+     "n": 25,
+     "diff": 0.0,
+     "ci_low": 0.0,
+     "ci_high": 0.0
+    },
+    {
+     "compare": "C4_spec_code - C1_direct",
+     "scoring": "tolerant",
+     "n": 25,
+     "diff": 0.0,
+     "ci_low": 0.0,
+     "ci_high": 0.0
+    },
+    {
+     "compare": "C4_spec_code - C2_cot",
+     "scoring": "strict",
+     "n": 14,
+     "diff": 0.0,
+     "ci_low": 0.0,
+     "ci_high": 0.0
+    },
+    {
+     "compare": "C4_spec_code - C2_cot",
+     "scoring": "tolerant",
+     "n": 14,
+     "diff": 0.0,
+     "ci_low": 0.0,
+     "ci_high": 0.0
+    }
+   ],
+   "slices": {
+    "domain": [
+     {
+      "domain": "econ",
+      "n_items": 24,
+      "C1_direct": 1.0,
+      "C2_cot": null,
+      "C4_spec_code": 1.0
+     },
+     {
+      "domain": "fin",
+      "n_items": 54,
+      "C1_direct": 1.0,
+      "C2_cot": null,
+      "C4_spec_code": 1.0
+     },
+     {
+      "domain": "weather",
+      "n_items": 84,
+      "C1_direct": 1.0,
+      "C2_cot": 1.0,
+      "C4_spec_code": 1.0
+     }
+    ],
+    "near": [
+     {
+      "near": false,
+      "n_items": 111,
+      "C1_direct": 1.0,
+      "C2_cot": 1.0,
+      "C4_spec_code": 1.0
+     },
+     {
+      "near": true,
+      "n_items": 51,
+      "C1_direct": 1.0,
+      "C2_cot": 1.0,
+      "C4_spec_code": 1.0
+     }
+    ],
+    "distractor_flip": [
+     {
+      "distractor_flip": false,
+      "n_items": 119,
+      "C1_direct": 1.0,
+      "C2_cot": 1.0,
+      "C4_spec_code": 1.0
+     },
+     {
+      "distractor_flip": true,
+      "n_items": 43,
+      "C1_direct": 1.0,
+      "C2_cot": 1.0,
+      "C4_spec_code": 1.0
+     }
+    ],
+    "shape": [
+     {
+      "shape": "between (2 bounds)",
+      "n_items": 62,
+      "C1_direct": 1.0,
+      "C2_cot": 1.0,
+      "C4_spec_code": 1.0
+     },
+     {
+      "shape": "one-sided",
+      "n_items": 100,
+      "C1_direct": 1.0,
+      "C2_cot": 1.0,
+      "C4_spec_code": 1.0
+     }
+    ]
+   },
+   "c4_causes": [],
+   "c4_value_from": []
+  },
+  "gpt-oss 20B | report": {
+   "overall": {
+    "C1_direct": {
+     "n": 6,
+     "acc": 0.833,
+     "acc_tol": 0.833,
+     "bal_acc": 0.75,
+     "bal_acc_tol": 0.75,
+     "no_answer": 0.167,
+     "no_answer_tol": 0.167,
+     "calls": 1.0,
+     "tokens": 719.5
+    },
+    "C4_spec_code": {
+     "n": 4,
+     "acc": 1.0,
+     "acc_tol": 1.0,
+     "bal_acc": 1.0,
+     "bal_acc_tol": 1.0,
+     "no_answer": 0.0,
+     "no_answer_tol": 0.0,
+     "calls": 2.0,
+     "tokens": 1079.0
+    }
+   },
+   "pairs": [
+    {
+     "compare": "C4_spec_code - C1_direct",
+     "scoring": "strict",
+     "n": 4,
+     "diff": 0.25,
+     "ci_low": 0.0,
+     "ci_high": 0.75
+    },
+    {
+     "compare": "C4_spec_code - C1_direct",
+     "scoring": "tolerant",
+     "n": 4,
+     "diff": 0.25,
+     "ci_low": 0.0,
+     "ci_high": 0.75
+    }
+   ],
+   "slices": {
+    "domain": [
+     {
+      "domain": "econ",
+      "n_items": 1,
+      "C1_direct": 1.0,
+      "C4_spec_code": 1.0
+     },
+     {
+      "domain": "fin",
+      "n_items": 1,
+      "C1_direct": 1.0,
+      "C4_spec_code": 1.0
+     },
+     {
+      "domain": "weather",
+      "n_items": 4,
+      "C1_direct": 0.75,
+      "C4_spec_code": 1.0
+     }
+    ],
+    "near": [
+     {
+      "near": false,
+      "n_items": 3,
+      "C1_direct": 1.0,
+      "C4_spec_code": 1.0
+     },
+     {
+      "near": true,
+      "n_items": 3,
+      "C1_direct": 0.667,
+      "C4_spec_code": 1.0
+     }
+    ],
+    "distractor_flip": [
+     {
+      "distractor_flip": false,
+      "n_items": 2,
+      "C1_direct": 1.0,
+      "C4_spec_code": 1.0
+     },
+     {
+      "distractor_flip": true,
+      "n_items": 4,
+      "C1_direct": 0.75,
+      "C4_spec_code": 1.0
+     }
+    ],
+    "shape": [
+     {
+      "shape": "between (2 bounds)",
+      "n_items": 2,
+      "C1_direct": 1.0,
+      "C4_spec_code": null
+     },
+     {
+      "shape": "one-sided",
+      "n_items": 4,
+      "C1_direct": 0.75,
+      "C4_spec_code": 1.0
+     }
+    ]
+   },
+   "c4_causes": [],
+   "c4_value_from": []
+  },
+  "gpt-oss 20B | report_both": {
+   "overall": {
+    "C1_direct": {
+     "n": 84,
+     "acc": 0.964,
+     "acc_tol": 0.964,
+     "bal_acc": 0.921,
+     "bal_acc_tol": 0.921,
+     "no_answer": 0.036,
+     "no_answer_tol": 0.036,
+     "calls": 1.0,
+     "tokens": 1287.643
+    },
+    "C4_spec_code": {
+     "n": 78,
+     "acc": 0.962,
+     "acc_tol": 0.962,
+     "bal_acc": 0.946,
+     "bal_acc_tol": 0.946,
+     "no_answer": 0.0,
+     "no_answer_tol": 0.0,
+     "calls": 2.0,
+     "tokens": 1753.397
+    }
+   },
+   "pairs": [
+    {
+     "compare": "C4_spec_code - C1_direct",
+     "scoring": "strict",
+     "n": 78,
+     "diff": -0.026,
+     "ci_low": -0.09,
+     "ci_high": 0.026
+    },
+    {
+     "compare": "C4_spec_code - C1_direct",
+     "scoring": "tolerant",
+     "n": 78,
+     "diff": -0.026,
+     "ci_low": -0.09,
+     "ci_high": 0.026
+    }
+   ],
+   "slices": {
+    "domain": [
+     {
+      "domain": "weather",
+      "n_items": 84,
+      "C1_direct": 0.964,
+      "C4_spec_code": 0.962
+     }
+    ],
+    "near": [
+     {
+      "near": false,
+      "n_items": 44,
+      "C1_direct": 1.0,
+      "C4_spec_code": 0.951
+     },
+     {
+      "near": true,
+      "n_items": 40,
+      "C1_direct": 0.925,
+      "C4_spec_code": 0.973
+     }
+    ],
+    "distractor_flip": [
+     {
+      "distractor_flip": false,
+      "n_items": 41,
+      "C1_direct": 0.976,
+      "C4_spec_code": 1.0
+     },
+     {
+      "distractor_flip": true,
+      "n_items": 43,
+      "C1_direct": 0.953,
+      "C4_spec_code": 0.923
+     }
+    ],
+    "shape": [
+     {
+      "shape": "between (2 bounds)",
+      "n_items": 56,
+      "C1_direct": 0.964,
+      "C4_spec_code": 0.981
+     },
+     {
+      "shape": "one-sided",
+      "n_items": 28,
+      "C1_direct": 0.964,
+      "C4_spec_code": 0.923
+     }
+    ]
+   },
+   "c4_causes": [
+    {
+     "domain": "weather",
+     "still wrong: value": 3
+    }
+   ],
+   "c4_value_from": [
+    {
+     "value_from": "record",
+     "n": 3
+    }
+   ]
+  }
+ }
+}

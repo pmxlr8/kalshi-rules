@@ -1,0 +1,792 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Milestone 3 Progress Report</title><style>
+@page { size: Letter; margin: 0.5in 0.62in 0.5in; }
+* { box-sizing: border-box; }
+body { font-family: "Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 9pt; line-height: 1.36; color: #1d1d1b; margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.title { font-size: 16.5pt; font-weight: 600; line-height: 1.2; margin: 0 0 3px; letter-spacing: -0.1px; }
+.sub { color: #52514e; font-size: 9pt; margin: 0 0 1px; }
+.bar { width: 44px; height: 3px; background: #2a78d6; border-radius: 2px; margin: 7px 0 8px; }
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 0 0 6px; }
+.tile { background: #f3f6fa; border-radius: 6px; padding: 7px 10px 8px; }
+.tile b { display: block; font-size: 14pt; font-weight: 600; color: #0b0b0b; line-height: 1.15; }
+.tile span { font-size: 7.9pt; color: #52514e; line-height: 1.3; display: block; margin-top: 2px; }
+h2 { font-size: 10.4pt; font-weight: 600; margin: 9px 0 2px; break-after: avoid; color: #0b0b0b; }
+h2 .k { color: #2a78d6; margin-right: 6px; }
+p { margin: 0 0 5px; }
+ul { margin: 0 0 5px; padding-left: 15px; }
+li { margin: 0 0 2.5px; }
+li::marker { color: #8a8984; }
+table { width: 100%; border-collapse: collapse; font-size: 8.2pt; margin: 3px 0 4px; break-inside: avoid; }
+th { text-align: left; font-weight: 600; color: #52514e; border-bottom: 1px solid #bdbcb6; padding: 3px 6px 3px 0; vertical-align: bottom; }
+td { border-bottom: 0.5px solid #e6e5e0; padding: 2.5px 6px 2.5px 0; vertical-align: top; }
+td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; }
+.kv td:first-child { width: 88px; font-weight: 600; color: #0b0b0b; }
+.n { color: #8a8984; font-size: 7.6pt; } .muted { color: #8a8984; }
+.cap { font-size: 7.9pt; color: #52514e; margin: 0 0 8px; }
+figure { margin: 6px 0 2px; break-inside: avoid; }
+figure svg { width: 100%; height: auto; display: block; }
+figure svg text { font-family: "Avenir Next", "Helvetica Neue", Helvetica, sans-serif !important; }
+.callout { border-left: 3px solid #2a78d6; background: #f3f6fa; padding: 6px 10px 6px; border-radius: 0 6px 6px 0; margin: 6px 0 4px; break-inside: avoid; }
+.callout p { margin: 0 0 3px; } .callout p:last-child { margin: 0; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+a { color: inherit; text-decoration: none; }
+</style></head><body>
+
+<div class="title">When Does Executing Contract Rules Help?<br>LLM Resolution of Real Kalshi Markets</div>
+<p class="sub">GenAI Final Project &middot; Milestone 3: Progress Report &middot; November 19, 2026</p>
+<p class="sub">Abhinav Sivakumar (as21153) &middot; Devansh Vikram (dv2482) &middot; Pranjal Mishra (pm4084) &middot; Code: github.com/pmxlr8/kalshi-rules</p>
+<div class="bar"></div>
+
+<div class="tiles">
+  <div class="tile"><b>666</b><span>real settled Kalshi markets in the study (dev 162, test 504)</span></div>
+  <div class="tile"><b>+19.1 pts</b><span>C4 (spec + code) over the direct answer, ALLaM 7B, dev</span></div>
+  <div class="tile"><b>100%</b><span>Qwen 27B direct answer on dev: nothing left for structure to fix</span></div>
+  <div class="tile"><b>64 of 70</b><span>strict C4 errors on ALLaM 7B that are format slips, not reasoning</span></div>
+</div>
+
+<h2><span class="k">1</span>How we addressed the Milestone 2 feedback</h2>
+<p><b>"Focus on when and why structured execution helps."</b> We no longer ask whether C4 beats C2 on average. Each item carries features that may decide when structure matters (distance to the threshold, one or two bounds, a distractor number that would flip the answer, report revisions, domain), and we vary model size. To explain why, we split each error by stage (rule, value or comparison) and by kind (reasoning or only format).</p>
+<p><b>"Your eval data is artificial."</b> We dropped the edited contracts. Every item is now a real settled Kalshi market, scored against Kalshi's real outcome, with the real evidence that its rules name. The gold comes from Kalshi's own data, so no hand labels are needed.</p>
+
+<h2><span class="k">2</span>System implemented so far</h2>
+<table class="kv">
+<tr><td>Data</td><td>113,152 settled markets in 21 series, closed 2026-09-11 to 2026-11-16 (public Kalshi API). Kalshi's threshold field applied to the settled value reproduces the outcome on 113,094 of 113,095 markets with a numeric value. The one exception is a real edge case: a Nasdaq-100 market whose threshold field (26,990) differs from its rules text ("above 26,989.99"); the text decided it.</td></tr>
+<tr><td>Evidence</td><td>Weather: the NWS daily climate report for the station the rules name. It matches Kalshi's value on 366 of 367 station-days. It also lists the record, normal, departure, last-year value and the other daily extreme; on 56% of weather items one of these would flip the answer. A variant gives the preliminary and the final report together. Finance and economics: one line with the official value.</td></tr>
+<tr><td>Study set</td><td>666 items in 100 events (weather 384, finance 144, economics 138), split by event: dev 162 items (25 events), test 504 (75 events). Prompts change on dev only; test is untouched.</td></tr>
+<tr><td>Methods</td><td><b>B1</b> no evidence &middot; <b>C1</b> direct answer &middot; <b>C2</b> chain of thought &middot; <b>C3</b> LLM writes a JSON spec, extracts the value, applies the spec in prose &middot; <b>C4</b> LLM writes the spec and extracts the value, Python applies the spec &middot; <b>O1, O2</b> C4 given the gold spec or the gold value. Built but not run yet: C2-SC (5-sample vote), B2 (no rules), O3.</td></tr>
+<tr><td>Models</td><td>Groq API, temperature 0: ALLaM 2 7B, Qwen 3.8 27B (reasoning off), gpt-oss 20B (reasoning low). Llama 3.1 from our Milestone 2 plan is no longer served there, so ALLaM is our small model.</td></tr>
+<tr><td>Scoring</td><td><b>Strict:</b> the answer must follow the output format. <b>Tolerant:</b> the saved output re-read with format repairs only (a "verdict is NO" sentence, bounds in the wrong JSON field, a value written before the JSON was cut off), with no new LLM calls. ABSTAIN and invalid count as wrong. Intervals: paired bootstrap over events.</td></tr>
+<tr><td>Engineering</td><td>All calls cached; runs resume; a self-test checks gold rules, evaluator and parsers; a Streamlit demo runs C2 and C4 side by side.</td></tr>
+</table>
+
+<h2><span class="k">3</span>Baseline results</h2>
+<p><b>B1 (no evidence)</b> on Qwen 27B has a balanced accuracy of 0.50 (n = 96), which is chance: the contract text does not give the outcome away, and the model shows no sign of knowing these 2026 outcomes. <b>C1 (direct answer)</b> is the baseline to beat: 100.0% on Qwen 27B (162 of 162), 77.2% on ALLaM 7B, and 96.4% on gpt-oss 20B with both reports.</p>
+
+<h2><span class="k">4</span>Current results (dev split)</h2>
+<table>
+<tr><th>Model</th><th>Evidence</th><th class="r">Items</th><th class="r">C1 direct</th><th class="r">C2 CoT</th><th class="r">C4 strict</th><th class="r">C4 tolerant</th><th class="r">C4 &minus; C1, points [95% CI]</th></tr>
+<tr><td>ALLaM 2 7B</td><td>1 report</td><td class="r">162</td><td class="r">77.2%</td><td class="r">90.0%<span class="n"> n=10</span></td><td class="r">56.8%</td><td class="r">96.3%</td><td class="r">+19.1 <span class="muted">[+9.5, +30.4]</span></td></tr>
+<tr><td>Qwen 3.8 27B</td><td>1 report</td><td class="r">162</td><td class="r">100.0%</td><td class="r">100.0%<span class="n"> n=24</span></td><td class="r">100.0%<span class="n"> n=25</span></td><td class="r">100.0%<span class="n"> n=25</span></td><td class="r">+0.0 <span class="muted">[+0.0, +0.0]</span><span class="n"> n=25</span></td></tr>
+<tr><td>gpt-oss 20B</td><td>2 reports, weather</td><td class="r">84</td><td class="r">96.4%</td><td class="r"><span class="muted">not run</span></td><td class="r">96.2%<span class="n"> n=78</span></td><td class="r">96.2%<span class="n"> n=78</span></td><td class="r">−2.6 <span class="muted">[−9.0, +2.6]</span><span class="n"> n=78</span></td></tr>
+</table>
+<p class="cap">Table 1. Accuracy on dev. C1 and C2 use tolerant scoring (strict C1: 72.8%, 100.0%, 96.4%). "n=" marks a run that is not complete; differences are paired on shared items.</p>
+<figure><svg xmlns:xlink="http://www.w3.org/1999/xlink" width="474.159746pt" height="193.495pt" viewBox="0 0 474.159746 193.495" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-11-19T01:59:04.207433</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.11.2, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 193.495 
+L 474.159746 193.495 
+L 474.159746 0 
+L 0 0 
+L 0 193.495 
+z
+" style="fill: none"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 51.86 162.359 
+L 172.917627 162.359 
+L 172.917627 18.215 
+L 51.86 18.215 
+L 51.86 162.359 
+z
+" style="fill: none"/>
+   </g>
+   <g id="matplotlib.axis_1">
+    <g id="xtick_1">
+     <g id="line2d_1">
+      <path d="M 51.86 162.359 
+L 51.86 18.215 
+" clip-path="url(#pdf0f50e34f)" style="fill: none; stroke: #e6e5e0; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_2"/>
+     <g id="text_1">
+      <text style="font-size: 8.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="51.86" y="173.951" transform="rotate(-0 51.86 173.951)">0%</text>
+     </g>
+    </g>
+    <g id="xtick_2">
+     <g id="line2d_3">
+      <path d="M 80.960391 162.359 
+L 80.960391 18.215 
+" clip-path="url(#pdf0f50e34f)" style="fill: none; stroke: #e6e5e0; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_4"/>
+     <g id="text_2">
+      <text style="font-size: 8.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="80.960391" y="173.951" transform="rotate(-0 80.960391 173.951)">25%</text>
+     </g>
+    </g>
+    <g id="xtick_3">
+     <g id="line2d_5">
+      <path d="M 110.060782 162.359 
+L 110.060782 18.215 
+" clip-path="url(#pdf0f50e34f)" style="fill: none; stroke: #e6e5e0; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_6"/>
+     <g id="text_3">
+      <text style="font-size: 8.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="110.060782" y="173.951" transform="rotate(-0 110.060782 173.951)">50%</text>
+     </g>
+    </g>
+    <g id="xtick_4">
+     <g id="line2d_7">
+      <path d="M 139.161173 162.359 
+L 139.161173 18.215 
+" clip-path="url(#pdf0f50e34f)" style="fill: none; stroke: #e6e5e0; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_8"/>
+     <g id="text_4">
+      <text style="font-size: 8.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="139.161173" y="173.951" transform="rotate(-0 139.161173 173.951)">75%</text>
+     </g>
+    </g>
+    <g id="xtick_5">
+     <g id="line2d_9">
+      <path d="M 168.261565 162.359 
+L 168.261565 18.215 
+" clip-path="url(#pdf0f50e34f)" style="fill: none; stroke: #e6e5e0; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_10"/>
+     <g id="text_5">
+      <text style="font-size: 8.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="168.261565" y="173.951" transform="rotate(-0 168.261565 173.951)">100%</text>
+     </g>
+    </g>
+   </g>
+   <g id="matplotlib.axis_2">
+    <g id="ytick_1">
+     <g id="line2d_11"/>
+     <g id="text_6">
+      <text style="font-size: 8.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; fill: #0b0b0b" transform="translate(1.44 134.36725)">gpt-oss 20B</text>
+      <text style="font-size: 8.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; fill: #0b0b0b" transform="translate(9.947969 144.50775)">(2 reports)</text>
+     </g>
+    </g>
+    <g id="ytick_2">
+     <g id="line2d_12"/>
+     <g id="text_7">
+      <text style="font-size: 8.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="48.36" y="94.333" transform="rotate(-0 48.36 94.333)">Qwen 27B</text>
+     </g>
+    </g>
+    <g id="ytick_3">
+     <g id="line2d_13"/>
+     <g id="text_8">
+      <text style="font-size: 8.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="48.36" y="49.288" transform="rotate(-0 48.36 49.288)">ALLaM 7B</text>
+     </g>
+    </g>
+   </g>
+   <g id="line2d_14">
+    <path d="M 163.838305 135.332 
+L 164.071108 135.332 
+" clip-path="url(#pdf0f50e34f)" style="fill: none; stroke: #e6e5e0; stroke-width: 2; stroke-linecap: round"/>
+   </g>
+   <g id="line2d_15">
+    <path d="M 168.261565 90.287 
+L 168.261565 90.287 
+" clip-path="url(#pdf0f50e34f)" style="fill: none; stroke: #e6e5e0; stroke-width: 2; stroke-linecap: round"/>
+   </g>
+   <g id="line2d_16">
+    <path d="M 117.976089 45.242 
+L 163.954707 45.242 
+" clip-path="url(#pdf0f50e34f)" style="fill: none; stroke: #e6e5e0; stroke-width: 2; stroke-linecap: round"/>
+   </g>
+   <g id="PathCollection_1"/>
+   <g id="PathCollection_2"/>
+   <g id="PathCollection_3"/>
+   <g id="patch_3">
+    <path d="M 51.86 162.359 
+L 172.917627 162.359 
+" style="fill: none; stroke: #e6e5e0; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="PathCollection_4">
+    <defs>
+     <path id="mb057f23f06" d="M 0 3.391165 
+C 0.899347 3.391165 1.761981 3.03385 2.397916 2.397916 
+C 3.03385 1.761981 3.391165 0.899347 3.391165 0 
+C 3.391165 -0.899347 3.03385 -1.761981 2.397916 -2.397916 
+C 1.761981 -3.03385 0.899347 -3.391165 0 -3.391165 
+C -0.899347 -3.391165 -1.761981 -3.03385 -2.397916 -2.397916 
+C -3.03385 -1.761981 -3.391165 -0.899347 -3.391165 0 
+C -3.391165 0.899347 -3.03385 1.761981 -2.397916 2.397916 
+C -1.761981 3.03385 -0.899347 3.391165 0 3.391165 
+z
+" style="stroke: #eb6834; stroke-width: 1.8"/>
+    </defs>
+    <g clip-path="url(#pdf0f50e34f)">
+     <use xlink:href="#mb057f23f06" x="163.838305" y="135.332" style="fill: #ffffff; stroke: #eb6834; stroke-width: 1.8"/>
+    </g>
+   </g>
+   <g id="text_9">
+    <text style="font-size: 7.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #52514e" x="177.57369" y="138.2141" transform="rotate(-0 177.57369 138.2141)">96 / 96</text>
+   </g>
+   <g id="PathCollection_5">
+    <g clip-path="url(#pdf0f50e34f)">
+     <use xlink:href="#mb057f23f06" x="168.261565" y="90.287" style="fill: #ffffff; stroke: #eb6834; stroke-width: 1.8"/>
+    </g>
+   </g>
+   <g id="text_10">
+    <text style="font-size: 7.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #52514e" x="177.57369" y="93.1691" transform="rotate(-0 177.57369 93.1691)">100 / 100</text>
+   </g>
+   <g id="PathCollection_6">
+    <g clip-path="url(#pdf0f50e34f)">
+     <use xlink:href="#mb057f23f06" x="117.976089" y="45.242" style="fill: #ffffff; stroke: #eb6834; stroke-width: 1.8"/>
+    </g>
+   </g>
+   <g id="text_11">
+    <text style="font-size: 7.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #52514e" x="177.57369" y="48.1241" transform="rotate(-0 177.57369 48.1241)">77 / 96</text>
+   </g>
+   <g id="text_12">
+    <text style="font-size: 7.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #52514e" x="177.57369" y="27.85385" transform="rotate(-0 177.57369 27.85385)">C1 / C4</text>
+   </g>
+   <g id="text_13">
+    <text style="font-weight: 700; font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="51.86" y="10.215" transform="rotate(-0 51.86 10.215)">A.  Accuracy on dev, by model</text>
+   </g>
+   <g id="PathCollection_7">
+    <defs>
+     <path id="m793617da24" d="M 0 3.391165 
+C 0.899347 3.391165 1.761981 3.03385 2.397916 2.397916 
+C 3.03385 1.761981 3.391165 0.899347 3.391165 0 
+C 3.391165 -0.899347 3.03385 -1.761981 2.397916 -2.397916 
+C 1.761981 -3.03385 0.899347 -3.391165 0 -3.391165 
+C -0.899347 -3.391165 -1.761981 -3.03385 -2.397916 -2.397916 
+C -3.03385 -1.761981 -3.391165 -0.899347 -3.391165 0 
+C -3.391165 0.899347 -3.03385 1.761981 -2.397916 2.397916 
+C -1.761981 3.03385 -0.899347 3.391165 0 3.391165 
+z
+" style="stroke: #ffffff; stroke-width: 1.2"/>
+    </defs>
+    <g clip-path="url(#pdf0f50e34f)">
+     <use xlink:href="#m793617da24" x="164.071108" y="135.332" style="fill: #2a78d6; stroke: #ffffff; stroke-width: 1.2"/>
+    </g>
+   </g>
+   <g id="PathCollection_8">
+    <g clip-path="url(#pdf0f50e34f)">
+     <use xlink:href="#m793617da24" x="168.261565" y="90.287" style="fill: #2a78d6; stroke: #ffffff; stroke-width: 1.2"/>
+    </g>
+   </g>
+   <g id="PathCollection_9">
+    <g clip-path="url(#pdf0f50e34f)">
+     <use xlink:href="#m793617da24" x="141.722008" y="45.242" style="fill: #2a78d6; stroke: #ffffff; stroke-width: 1.2"/>
+    </g>
+   </g>
+   <g id="PathCollection_10">
+    <defs>
+     <path id="m637f81ba2d" d="M 0 3.391165 
+C 0.899347 3.391165 1.761981 3.03385 2.397916 2.397916 
+C 3.03385 1.761981 3.391165 0.899347 3.391165 0 
+C 3.391165 -0.899347 3.03385 -1.761981 2.397916 -2.397916 
+C 1.761981 -3.03385 0.899347 -3.391165 0 -3.391165 
+C -0.899347 -3.391165 -1.761981 -3.03385 -2.397916 -2.397916 
+C -3.03385 -1.761981 -3.391165 -0.899347 -3.391165 0 
+C -3.391165 0.899347 -3.03385 1.761981 -2.397916 2.397916 
+C -1.761981 3.03385 -0.899347 3.391165 0 3.391165 
+z
+" style="stroke: #ffffff; stroke-width: 1.2"/>
+    </defs>
+    <g clip-path="url(#pdf0f50e34f)">
+     <use xlink:href="#m637f81ba2d" x="163.838305" y="135.332" style="fill: #eb6834; stroke: #ffffff; stroke-width: 1.2"/>
+    </g>
+   </g>
+   <g id="PathCollection_11">
+    <g clip-path="url(#pdf0f50e34f)">
+     <use xlink:href="#m637f81ba2d" x="168.261565" y="90.287" style="fill: #eb6834; stroke: #ffffff; stroke-width: 1.2"/>
+    </g>
+   </g>
+   <g id="PathCollection_12">
+    <g clip-path="url(#pdf0f50e34f)">
+     <use xlink:href="#m637f81ba2d" x="163.954707" y="45.242" style="fill: #eb6834; stroke: #ffffff; stroke-width: 1.2"/>
+    </g>
+   </g>
+  </g>
+  <g id="axes_2">
+   <g id="patch_4">
+    <path d="M 302.297966 162.359 
+L 453.62 162.359 
+L 453.62 18.215 
+L 302.297966 18.215 
+L 302.297966 162.359 
+z
+" style="fill: none"/>
+   </g>
+   <g id="matplotlib.axis_3">
+    <g id="xtick_6">
+     <g id="line2d_17">
+      <path d="M 302.297966 162.359 
+L 302.297966 18.215 
+" clip-path="url(#pad1fe08663)" style="fill: none; stroke: #e6e5e0; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_18"/>
+     <g id="text_14">
+      <text style="font-size: 8.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="302.297966" y="173.951" transform="rotate(-0 302.297966 173.951)">0%</text>
+     </g>
+    </g>
+    <g id="xtick_7">
+     <g id="line2d_19">
+      <path d="M 338.673455 162.359 
+L 338.673455 18.215 
+" clip-path="url(#pad1fe08663)" style="fill: none; stroke: #e6e5e0; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_20"/>
+     <g id="text_15">
+      <text style="font-size: 8.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="338.673455" y="173.951" transform="rotate(-0 338.673455 173.951)">25%</text>
+     </g>
+    </g>
+    <g id="xtick_8">
+     <g id="line2d_21">
+      <path d="M 375.048944 162.359 
+L 375.048944 18.215 
+" clip-path="url(#pad1fe08663)" style="fill: none; stroke: #e6e5e0; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_22"/>
+     <g id="text_16">
+      <text style="font-size: 8.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="375.048944" y="173.951" transform="rotate(-0 375.048944 173.951)">50%</text>
+     </g>
+    </g>
+    <g id="xtick_9">
+     <g id="line2d_23">
+      <path d="M 411.424433 162.359 
+L 411.424433 18.215 
+" clip-path="url(#pad1fe08663)" style="fill: none; stroke: #e6e5e0; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_24"/>
+     <g id="text_17">
+      <text style="font-size: 8.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="411.424433" y="173.951" transform="rotate(-0 411.424433 173.951)">75%</text>
+     </g>
+    </g>
+    <g id="xtick_10">
+     <g id="line2d_25">
+      <path d="M 447.799922 162.359 
+L 447.799922 18.215 
+" clip-path="url(#pad1fe08663)" style="fill: none; stroke: #e6e5e0; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_26"/>
+     <g id="text_18">
+      <text style="font-size: 8.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="447.799922" y="173.951" transform="rotate(-0 447.799922 173.951)">100%</text>
+     </g>
+    </g>
+   </g>
+   <g id="matplotlib.axis_4">
+    <g id="ytick_4">
+     <g id="line2d_27"/>
+     <g id="text_19">
+      <text style="font-size: 8.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="298.797966" y="157.204319" transform="rotate(-0 298.797966 157.204319)">One bound</text>
+     </g>
+    </g>
+    <g id="ytick_5">
+     <g id="line2d_28"/>
+     <g id="text_20">
+      <text style="font-size: 8.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="298.797966" y="141.869851" transform="rotate(-0 298.797966 141.869851)">Two bounds</text>
+     </g>
+    </g>
+    <g id="ytick_6">
+     <g id="line2d_29"/>
+     <g id="text_21">
+      <text style="font-size: 8.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="298.797966" y="126.535383" transform="rotate(-0 298.797966 126.535383)">No flipping distractor</text>
+     </g>
+    </g>
+    <g id="ytick_7">
+     <g id="line2d_30"/>
+     <g id="text_22">
+      <text style="font-size: 8.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="298.797966" y="111.200915" transform="rotate(-0 298.797966 111.200915)">Distractor flips answer</text>
+     </g>
+    </g>
+    <g id="ytick_8">
+     <g id="line2d_31"/>
+     <g id="text_23">
+      <text style="font-size: 8.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="298.797966" y="95.866447" transform="rotate(-0 298.797966 95.866447)">Far from threshold</text>
+     </g>
+    </g>
+    <g id="ytick_9">
+     <g id="line2d_32"/>
+     <g id="text_24">
+      <text style="font-size: 8.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="298.797966" y="80.531979" transform="rotate(-0 298.797966 80.531979)">Near threshold</text>
+     </g>
+    </g>
+    <g id="ytick_10">
+     <g id="line2d_33"/>
+     <g id="text_25">
+      <text style="font-size: 8.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="298.797966" y="65.197511" transform="rotate(-0 298.797966 65.197511)">Economics, 1 line</text>
+     </g>
+    </g>
+    <g id="ytick_11">
+     <g id="line2d_34"/>
+     <g id="text_26">
+      <text style="font-size: 8.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="298.797966" y="49.863043" transform="rotate(-0 298.797966 49.863043)">Finance, 1 line</text>
+     </g>
+    </g>
+    <g id="ytick_12">
+     <g id="line2d_35"/>
+     <g id="text_27">
+      <text style="font-size: 8.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="298.797966" y="34.528574" transform="rotate(-0 298.797966 34.528574)">Weather report</text>
+     </g>
+    </g>
+   </g>
+   <g id="line2d_36">
+    <path d="M 418.699531 153.158319 
+L 444.889883 153.158319 
+" clip-path="url(#pad1fe08663)" style="fill: none; stroke: #e6e5e0; stroke-width: 2; stroke-linecap: round"/>
+   </g>
+   <g id="line2d_37">
+    <path d="M 407.932386 137.823851 
+L 438.342295 137.823851 
+" clip-path="url(#pad1fe08663)" style="fill: none; stroke: #e6e5e0; stroke-width: 2; stroke-linecap: round"/>
+   </g>
+   <g id="line2d_38">
+    <path d="M 422.191578 122.489383 
+L 446.635906 122.489383 
+" clip-path="url(#pad1fe08663)" style="fill: none; stroke: #e6e5e0; stroke-width: 2; stroke-linecap: round"/>
+   </g>
+   <g id="line2d_39">
+    <path d="M 393.673194 107.154915 
+L 430.921695 107.154915 
+" clip-path="url(#pad1fe08663)" style="fill: none; stroke: #e6e5e0; stroke-width: 2; stroke-linecap: round"/>
+   </g>
+   <g id="line2d_40">
+    <path d="M 420.300052 91.820447 
+L 443.871369 91.820447 
+" clip-path="url(#pad1fe08663)" style="fill: none; stroke: #e6e5e0; stroke-width: 2; stroke-linecap: round"/>
+   </g>
+   <g id="line2d_41">
+    <path d="M 402.112308 76.485979 
+L 439.215306 76.485979 
+" clip-path="url(#pad1fe08663)" style="fill: none; stroke: #e6e5e0; stroke-width: 2; stroke-linecap: round"/>
+   </g>
+   <g id="line2d_42">
+    <path d="M 429.612177 61.151511 
+L 447.799922 61.151511 
+" clip-path="url(#pad1fe08663)" style="fill: none; stroke: #e6e5e0; stroke-width: 2; stroke-linecap: round"/>
+   </g>
+   <g id="line2d_43">
+    <path d="M 437.032777 45.817043 
+L 447.799922 45.817043 
+" clip-path="url(#pad1fe08663)" style="fill: none; stroke: #e6e5e0; stroke-width: 2; stroke-linecap: round"/>
+   </g>
+   <g id="line2d_44">
+    <path d="M 395.855724 30.482574 
+L 437.469283 30.482574 
+" clip-path="url(#pad1fe08663)" style="fill: none; stroke: #e6e5e0; stroke-width: 2; stroke-linecap: round"/>
+   </g>
+   <g id="line2d_45">
+    <path d="M 302.297966 130.156617 
+L 453.62 130.156617 
+" clip-path="url(#pad1fe08663)" style="fill: none; stroke-dasharray: 1.2,1.2; stroke-dashoffset: 0; stroke: #e6e5e0; stroke-width: 0.6"/>
+   </g>
+   <g id="line2d_46">
+    <path d="M 302.297966 99.487681 
+L 453.62 99.487681 
+" clip-path="url(#pad1fe08663)" style="fill: none; stroke-dasharray: 1.2,1.2; stroke-dashoffset: 0; stroke: #e6e5e0; stroke-width: 0.6"/>
+   </g>
+   <g id="line2d_47">
+    <path d="M 302.297966 68.818745 
+L 453.62 68.818745 
+" clip-path="url(#pad1fe08663)" style="fill: none; stroke-dasharray: 1.2,1.2; stroke-dashoffset: 0; stroke: #e6e5e0; stroke-width: 0.6"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 302.297966 162.359 
+L 453.62 162.359 
+" style="fill: none; stroke: #e6e5e0; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="PathCollection_13">
+    <defs>
+     <path id="mb17fea5635" d="M 0 3.162278 
+C 0.838646 3.162278 1.643056 2.82908 2.236068 2.236068 
+C 2.82908 1.643056 3.162278 0.838646 3.162278 0 
+C 3.162278 -0.838646 2.82908 -1.643056 2.236068 -2.236068 
+C 1.643056 -2.82908 0.838646 -3.162278 0 -3.162278 
+C -0.838646 -3.162278 -1.643056 -2.82908 -2.236068 -2.236068 
+C -2.82908 -1.643056 -3.162278 -0.838646 -3.162278 0 
+C -3.162278 0.838646 -2.82908 1.643056 -2.236068 2.236068 
+C -1.643056 2.82908 -0.838646 3.162278 0 3.162278 
+z
+" style="stroke: #ffffff; stroke-width: 1.2"/>
+    </defs>
+    <g clip-path="url(#pad1fe08663)">
+     <use xlink:href="#mb17fea5635" x="418.699531" y="153.158319" style="fill: #2a78d6; stroke: #ffffff; stroke-width: 1.2"/>
+    </g>
+   </g>
+   <g id="text_28">
+    <text style="font-size: 7.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #52514e" x="457.985059" y="156.040419" transform="rotate(-0 457.985059 156.040419)">+18</text>
+   </g>
+   <g id="PathCollection_14">
+    <g clip-path="url(#pad1fe08663)">
+     <use xlink:href="#mb17fea5635" x="407.932386" y="137.823851" style="fill: #2a78d6; stroke: #ffffff; stroke-width: 1.2"/>
+    </g>
+   </g>
+   <g id="text_29">
+    <text style="font-size: 7.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #52514e" x="457.985059" y="140.705951" transform="rotate(-0 457.985059 140.705951)">+21</text>
+   </g>
+   <g id="PathCollection_15">
+    <g clip-path="url(#pad1fe08663)">
+     <use xlink:href="#mb17fea5635" x="422.191578" y="122.489383" style="fill: #2a78d6; stroke: #ffffff; stroke-width: 1.2"/>
+    </g>
+   </g>
+   <g id="text_30">
+    <text style="font-size: 7.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #52514e" x="457.985059" y="125.371483" transform="rotate(-0 457.985059 125.371483)">+17</text>
+   </g>
+   <g id="PathCollection_16">
+    <g clip-path="url(#pad1fe08663)">
+     <use xlink:href="#mb17fea5635" x="393.673194" y="107.154915" style="fill: #2a78d6; stroke: #ffffff; stroke-width: 1.2"/>
+    </g>
+   </g>
+   <g id="text_31">
+    <text style="font-size: 7.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #52514e" x="457.985059" y="110.037015" transform="rotate(-0 457.985059 110.037015)">+26</text>
+   </g>
+   <g id="PathCollection_17">
+    <g clip-path="url(#pad1fe08663)">
+     <use xlink:href="#mb17fea5635" x="420.300052" y="91.820447" style="fill: #2a78d6; stroke: #ffffff; stroke-width: 1.2"/>
+    </g>
+   </g>
+   <g id="text_32">
+    <text style="font-size: 7.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #52514e" x="457.985059" y="94.702547" transform="rotate(-0 457.985059 94.702547)">+16</text>
+   </g>
+   <g id="PathCollection_18">
+    <g clip-path="url(#pad1fe08663)">
+     <use xlink:href="#mb17fea5635" x="402.112308" y="76.485979" style="fill: #2a78d6; stroke: #ffffff; stroke-width: 1.2"/>
+    </g>
+   </g>
+   <g id="text_33">
+    <text style="font-size: 7.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #52514e" x="457.985059" y="79.368079" transform="rotate(-0 457.985059 79.368079)">+25</text>
+   </g>
+   <g id="PathCollection_19">
+    <g clip-path="url(#pad1fe08663)">
+     <use xlink:href="#mb17fea5635" x="429.612177" y="61.151511" style="fill: #2a78d6; stroke: #ffffff; stroke-width: 1.2"/>
+    </g>
+   </g>
+   <g id="text_34">
+    <text style="font-size: 7.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #52514e" x="457.985059" y="64.033611" transform="rotate(-0 457.985059 64.033611)">+12</text>
+   </g>
+   <g id="PathCollection_20">
+    <g clip-path="url(#pad1fe08663)">
+     <use xlink:href="#mb17fea5635" x="437.032777" y="45.817043" style="fill: #2a78d6; stroke: #ffffff; stroke-width: 1.2"/>
+    </g>
+   </g>
+   <g id="text_35">
+    <text style="font-size: 7.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #52514e" x="457.985059" y="48.699143" transform="rotate(-0 457.985059 48.699143)">+7</text>
+   </g>
+   <g id="PathCollection_21">
+    <g clip-path="url(#pad1fe08663)">
+     <use xlink:href="#mb17fea5635" x="395.855724" y="30.482574" style="fill: #2a78d6; stroke: #ffffff; stroke-width: 1.2"/>
+    </g>
+   </g>
+   <g id="text_36">
+    <text style="font-size: 7.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #52514e" x="457.985059" y="33.364674" transform="rotate(-0 457.985059 33.364674)">+29</text>
+   </g>
+   <g id="text_37">
+    <text style="font-size: 7.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #52514e" x="457.985059" y="23.39727" transform="rotate(-0 457.985059 23.39727)">gain</text>
+   </g>
+   <g id="text_38">
+    <text style="font-weight: 700; font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="302.297966" y="10.215" transform="rotate(-0 302.297966 10.215)">B.  ALLaM 7B: C1 vs. C4 by item type</text>
+   </g>
+   <g id="PathCollection_22">
+    <defs>
+     <path id="m01863e3259" d="M 0 3.162278 
+C 0.838646 3.162278 1.643056 2.82908 2.236068 2.236068 
+C 2.82908 1.643056 3.162278 0.838646 3.162278 0 
+C 3.162278 -0.838646 2.82908 -1.643056 2.236068 -2.236068 
+C 1.643056 -2.82908 0.838646 -3.162278 0 -3.162278 
+C -0.838646 -3.162278 -1.643056 -2.82908 -2.236068 -2.236068 
+C -2.82908 -1.643056 -3.162278 -0.838646 -3.162278 0 
+C -3.162278 0.838646 -2.82908 1.643056 -2.236068 2.236068 
+C -1.643056 2.82908 -0.838646 3.162278 0 3.162278 
+z
+" style="stroke: #ffffff; stroke-width: 1.2"/>
+    </defs>
+    <g clip-path="url(#pad1fe08663)">
+     <use xlink:href="#m01863e3259" x="444.889883" y="153.158319" style="fill: #eb6834; stroke: #ffffff; stroke-width: 1.2"/>
+    </g>
+   </g>
+   <g id="PathCollection_23">
+    <g clip-path="url(#pad1fe08663)">
+     <use xlink:href="#m01863e3259" x="438.342295" y="137.823851" style="fill: #eb6834; stroke: #ffffff; stroke-width: 1.2"/>
+    </g>
+   </g>
+   <g id="PathCollection_24">
+    <g clip-path="url(#pad1fe08663)">
+     <use xlink:href="#m01863e3259" x="446.635906" y="122.489383" style="fill: #eb6834; stroke: #ffffff; stroke-width: 1.2"/>
+    </g>
+   </g>
+   <g id="PathCollection_25">
+    <g clip-path="url(#pad1fe08663)">
+     <use xlink:href="#m01863e3259" x="430.921695" y="107.154915" style="fill: #eb6834; stroke: #ffffff; stroke-width: 1.2"/>
+    </g>
+   </g>
+   <g id="PathCollection_26">
+    <g clip-path="url(#pad1fe08663)">
+     <use xlink:href="#m01863e3259" x="443.871369" y="91.820447" style="fill: #eb6834; stroke: #ffffff; stroke-width: 1.2"/>
+    </g>
+   </g>
+   <g id="PathCollection_27">
+    <g clip-path="url(#pad1fe08663)">
+     <use xlink:href="#m01863e3259" x="439.215306" y="76.485979" style="fill: #eb6834; stroke: #ffffff; stroke-width: 1.2"/>
+    </g>
+   </g>
+   <g id="PathCollection_28">
+    <g clip-path="url(#pad1fe08663)">
+     <use xlink:href="#m01863e3259" x="447.799922" y="61.151511" style="fill: #eb6834; stroke: #ffffff; stroke-width: 1.2"/>
+    </g>
+   </g>
+   <g id="PathCollection_29">
+    <g clip-path="url(#pad1fe08663)">
+     <use xlink:href="#m01863e3259" x="447.799922" y="45.817043" style="fill: #eb6834; stroke: #ffffff; stroke-width: 1.2"/>
+    </g>
+   </g>
+   <g id="PathCollection_30">
+    <g clip-path="url(#pad1fe08663)">
+     <use xlink:href="#m01863e3259" x="437.469283" y="30.482574" style="fill: #eb6834; stroke: #ffffff; stroke-width: 1.2"/>
+    </g>
+   </g>
+  </g>
+  <g id="legend_1">
+   <g id="PathCollection_31">
+    <defs>
+     <path id="m0509f412fb" d="M 0 3.162278 
+C 0.838646 3.162278 1.643056 2.82908 2.236068 2.236068 
+C 2.82908 1.643056 3.162278 0.838646 3.162278 0 
+C 3.162278 -0.838646 2.82908 -1.643056 2.236068 -2.236068 
+C 1.643056 -2.82908 0.838646 -3.162278 0 -3.162278 
+C -0.838646 -3.162278 -1.643056 -2.82908 -2.236068 -2.236068 
+C -2.82908 -1.643056 -3.162278 -0.838646 -3.162278 0 
+C -3.162278 0.838646 -2.82908 1.643056 -2.236068 2.236068 
+C -1.643056 2.82908 -0.838646 3.162278 0 3.162278 
+z
+" style="stroke: #2a78d6"/>
+    </defs>
+    <g>
+     <use xlink:href="#m0509f412fb" x="140.871875" y="185.051" style="fill: #2a78d6; stroke: #2a78d6"/>
+    </g>
+   </g>
+   <g id="text_39">
+    <text style="font-size: 8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="150.471875" y="187.151" transform="rotate(-0 150.471875 187.151)">C1 direct</text>
+   </g>
+   <g id="PathCollection_32">
+    <defs>
+     <path id="maf2becdd3c" d="M 0 3.162278 
+C 0.838646 3.162278 1.643056 2.82908 2.236068 2.236068 
+C 2.82908 1.643056 3.162278 0.838646 3.162278 0 
+C 3.162278 -0.838646 2.82908 -1.643056 2.236068 -2.236068 
+C 1.643056 -2.82908 0.838646 -3.162278 0 -3.162278 
+C -0.838646 -3.162278 -1.643056 -2.82908 -2.236068 -2.236068 
+C -2.82908 -1.643056 -3.162278 -0.838646 -3.162278 0 
+C -3.162278 0.838646 -2.82908 1.643056 -2.236068 2.236068 
+C -1.643056 2.82908 -0.838646 3.162278 0 3.162278 
+z
+" style="stroke: #eb6834"/>
+    </defs>
+    <g>
+     <use xlink:href="#maf2becdd3c" x="203.871875" y="185.051" style="fill: #eb6834; stroke: #eb6834"/>
+    </g>
+   </g>
+   <g id="text_40">
+    <text style="font-size: 8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="213.471875" y="187.151" transform="rotate(-0 213.471875 187.151)">C4 spec + code</text>
+   </g>
+   <g id="PathCollection_33">
+    <defs>
+     <path id="m8415dc36b7" d="M 0 3.162278 
+C 0.838646 3.162278 1.643056 2.82908 2.236068 2.236068 
+C 2.82908 1.643056 3.162278 0.838646 3.162278 0 
+C 3.162278 -0.838646 2.82908 -1.643056 2.236068 -2.236068 
+C 1.643056 -2.82908 0.838646 -3.162278 0 -3.162278 
+C -0.838646 -3.162278 -1.643056 -2.82908 -2.236068 -2.236068 
+C -2.82908 -1.643056 -3.162278 -0.838646 -3.162278 0 
+C -3.162278 0.838646 -2.82908 1.643056 -2.236068 2.236068 
+C -1.643056 2.82908 -0.838646 3.162278 0 3.162278 
+z
+" style="stroke: #eb6834; stroke-width: 1.6"/>
+    </defs>
+    <g>
+     <use xlink:href="#m8415dc36b7" x="291.231875" y="185.051" style="fill: #ffffff; stroke: #eb6834; stroke-width: 1.6"/>
+    </g>
+   </g>
+   <g id="text_41">
+    <text style="font-size: 8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="300.831875" y="187.151" transform="rotate(-0 300.831875 187.151)">C4 strict scoring</text>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="pdf0f50e34f">
+   <rect x="51.86" y="18.215" width="121.057627" height="144.144"/>
+  </clipPath>
+  <clipPath id="pad1fe08663">
+   <rect x="302.297966" y="18.215" width="151.322034" height="144.144"/>
+  </clipPath>
+ </defs>
+</svg>
+</figure>
+<p class="cap">Figure 1. A: accuracy by model (the ring is C4 under strict scoring). B: ALLaM 7B by item type, tolerant scoring; the gain is in points.</p>
+<div class="callout">
+<p><b>Our answer so far.</b> <b>When:</b> structure helps when the direct answer fails. On real markets this happens with a small model, with long evidence full of distractors, near the threshold and on two-bound rules. With a 27B model, the direct answer is already right on every dev item.</p>
+<p><b>Why:</b> the direct answer fails at the comparison (a YES bias and wrong calls at inclusive bounds), and code makes the comparison exact. <b>Why not always:</b> each extra JSON step is a new place to break the format, so strict C4 loses until the pipeline handles the format itself (plan item 2).</p>
+</div>
+
+<h2><span class="k">5</span>Experiments and comparisons completed</h2>
+<ul>
+<li><b>E1 baselines</b> (B1, C1); <b>E2 main methods</b> (C1, C4 on all dev items for ALLaM 7B and Qwen 27B, Qwen C4 and C2 in part); <b>E3 scale</b> (7B, 20B, 27B); the <b>revision variant</b> (both reports, gpt-oss 20B); <b>pilot</b> spec format v1 against v2.</li>
+<li><b>Analysis:</b> strict against tolerant scoring for every method; slices by domain, distance, distractor and bound type; paired differences with event-clustered bootstrap intervals; C4 errors split by cause.</li>
+</ul>
+
+<div class="two">
+<div>
+<h2><span class="k">6</span>What worked</h2>
+<ul>
+<li><b>Structure helps the small model:</b> C4 beats C1 on ALLaM 7B by +19.1 points (95% CI +9.5 to +30.4), n = 162. The gain is larger in every harder cell (Figure 1B).</li>
+<li><b>Real data with exact gold:</b> no labels and no generated items. Hard cases are common: 51 of 162 dev items are within 1 step of the threshold, 43 have a flipping distractor.</li>
+<li><b>Tolerant scoring</b> separates "reasoned wrong" from "broke the format", at no cost.</li>
+</ul>
+</div>
+<div>
+<h2><span class="k">7</span>What failed</h2>
+<ul>
+<li><b>Strict C4 on the small model:</b> 56.8% against 72.8% for strict C1, −16.0 points (95% CI −29.9 to −3.3). C4 has 2 JSON outputs where C1 has 1.</li>
+<li><b>No room to help a 27B model:</b> Qwen 27B answers all 162 dev items directly.</li>
+<li><b>Two reports break ALLaM 7B:</b> with about 3,300 input tokens (its context is 4,096) it loops or prints blank lines: no valid answer on 7 of 7, so we stopped that run.</li>
+<li><b>Compute:</b> the free Groq tier's daily token limit per model left C2, the oracles and test incomplete.</li>
+</ul>
+</div>
+</div>
+
+<h2><span class="k">8</span>Failure analysis and likely causes</h2>
+<ul>
+<li><b>ALLaM 7B, direct answer.</b> 37 of 162 are wrong, and 34 of these say YES on a NO market: it answers YES 48.8% of the time against a true rate of 29.6%. Of the 30 weather errors, 18 give only a verdict, 7 cite a wrong value, and 5 cite the right value but compare it wrongly at a bound (70 judged outside "69&deg; to 70&deg;"). Likely cause: the comparison step. C4 fixes 34 of the 37, because Python does the comparison.</li>
+<li><b>ALLaM 7B, strict C4.</b> All 70 errors are on weather. 34: the extractor wrote the right value, then copied the report line "word for word" as asked; the report's fixed-width columns are long runs of spaces, so it hit the token cap before closing the JSON. 30: for "between" rules it put [low, high] in the "threshold" field. Only 6 are real value errors, each a distractor (last year 2, normal 2, other 2).</li>
+<li><b>gpt-oss 20B, both reports.</b> C1 abstains on 3 of 84 items, 2 of them on the one dev day where the reports disagree (NYC low: preliminary 58, final 54); it does not fall back to the later report. C4 takes a wrong value 3 times, each time the record high, which sits next to the observed value in the same row.</li>
+<li><b>Revisions are rare in real markets.</b> The two reports differ on 6 of 84 dev weather items and change the outcome on 2 (test: 12 and 2 of 300), far fewer than in the edited set we had planned.</li>
+</ul>
+
+<h2><span class="k">9</span>Changes attempted and their effects</h2>
+<table>
+<tr><th style="width:30%">Change</th><th>Effect</th></tr>
+<tr><td>Spec format v1 to v2: one "threshold" field for one-bound rules; "low" and "high" only for "between"</td><td>C4 on the same 12 pilot items: 4 to 12 correct. Tolerant scoring of the v1 outputs also gives 12, so all 8 v1 errors were format slips. C3, which applies the same v1 spec in prose, had 12 of 12: prose is robust to slips that break code.</td></tr>
+<tr><td>B1 must answer YES or NO</td><td>The v1 prompt let the model abstain (10 of 12). Now B1 is a true chance baseline.</td></tr>
+<tr><td>Output cap for ALLaM 7B: 60 to 320 tokens</td><td>It writes prose before the JSON and was cut off. Strict invalid answers are now 8 of 162.</td></tr>
+<tr><td>Report parser fix (times like "11:12 AM")</td><td>The distractor parser read only 144 of 384 weather reports; now all 384. Dev items with a flipping distractor: 15 to 43.</td></tr>
+<tr><td>Free-tier queues</td><td>One queue per model (each has its own daily limit) that waits at the cap instead of stopping.</td></tr>
+</table>
+
+<h2><span class="k">10</span>Remaining gaps relative to our success criteria</h2>
+<ul>
+<li>Our Milestone 2 primary metric (C4 &minus; C2 on 360 edited items) went with the edited set. The new primary result is C4 &minus; C1 and C4 &minus; C2 per cell (model &times; domain, distance, distractor, bound type) on the untouched test split. <b>Test is not run yet.</b></li>
+<li>Not run yet: C2 on all dev items, C3 beyond the pilot, C2-SC at matched tokens, B2, O1 to O3, and the spec-agreement uncertainty check (H3).</li>
+<li>Finance and economics evidence is one line, so it tests reading the rule, not finding the value. Our largest model is 27B (no 70B). The web-search bundles, source admissibility and the KalshiBench comparison with Kota (2026) went with the switch to the named source.</li>
+</ul>
+
+<h2><span class="k">11</span>Prioritized plan for the final two weeks</h2>
+<table>
+<tr><th style="width:4%">#</th><th style="width:15%">Dates</th><th>Task</th><th style="width:17%">Owner</th></tr>
+<tr><td>1</td><td>Nov 20&ndash;23</td><td><b>Test run</b> (504 items): C1, C2, C4 on ALLaM 7B and Qwen 27B; C1, C4 on gpt-oss 20B; finish dev (paid Groq tier).</td><td>Devansh</td></tr>
+<tr><td>2</td><td>Nov 20&ndash;24</td><td><b>Fix the 2 format failure points in the pipeline:</b> quote of 12 words or less, schema check with one retry, JSON mode. Retest on dev, freeze; strict scores become the main result.</td><td>Abhinav</td></tr>
+<tr><td>3</td><td>Nov 22&ndash;26</td><td><b>Real source text for finance and economics</b> (BLS CPI release, AAA daily price page), so they also test finding the value among distractors.</td><td>Devansh</td></tr>
+<tr><td>4</td><td>Nov 24&ndash;28</td><td><b>Compute and statistics:</b> C2-SC at matched tokens; O1, O2; a cluster-robust logistic "when" model; a router picked on dev, scored on test; gpt-oss 120B as the large model.</td><td>Pranjal</td></tr>
+<tr><td>5</td><td>Nov 28&ndash;Dec 1</td><td><b>Failure analysis:</b> 30 errors per method read by hand, tagged by stage and cause.</td><td>All three</td></tr>
+<tr><td>6</td><td>Dec 1&ndash;3</td><td><b>Demo and final report:</b> live C2 against C4 on a market, the stage where each fails, and the cached results.</td><td>All three</td></tr>
+</table>
+</body></html>
